@@ -14,21 +14,26 @@ interface Account {
   };
 }
 
-interface IndexedData {
-  messages: ProcessedGmailMessage[];
-  events: CalendarEvent[];
-  contacts: Contact[];
+interface GoogleAccounts {
+  gmail: Account[];
+  calendar: Account[];
+  contacts: Account[];
 }
 
-interface GoogleAccounts {
-  gmail?: Account;
-  calendar?: Account;
-  contacts?: Account;
+interface SelectedAccounts {
+  gmail?: string;
+  calendar?: string;
+  contacts?: string;
 }
 
 export default function GoogleIndexDemo() {
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [googleAccounts, setGoogleAccounts] = useState<GoogleAccounts>({});
+  const [googleAccounts, setGoogleAccounts] = useState<GoogleAccounts>({
+    gmail: [],
+    calendar: [],
+    contacts: []
+  });
+  const [selectedAccounts, setSelectedAccounts] = useState<SelectedAccounts>({});
   const [loading, setLoading] = useState(false);
   const [indexedData, setIndexedData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,27 +55,29 @@ export default function GoogleIndexDemo() {
       setAccounts(allAccounts);
       
       // Organize Google accounts by service
-      const organized: GoogleAccounts = {};
-      allAccounts.forEach((account: Account) => {
-        if (account.app.name_slug === 'gmail') {
-          organized.gmail = account;
-        } else if (account.app.name_slug === 'google_calendar') {
-          organized.calendar = account;
-        } else if (account.app.name_slug === 'google_contacts') {
-          organized.contacts = account;
-        }
-      });
+      const organized: GoogleAccounts = {
+        gmail: allAccounts.filter((account: Account) => account.app.name_slug === 'gmail'),
+        calendar: allAccounts.filter((account: Account) => account.app.name_slug === 'google_calendar'),
+        contacts: allAccounts.filter((account: Account) => account.app.name_slug === 'google_contacts')
+      };
       
       setGoogleAccounts(organized);
+      
+      // Auto-select first account for each service
+      setSelectedAccounts({
+        gmail: organized.gmail[0]?.id,
+        calendar: organized.calendar[0]?.id,
+        contacts: organized.contacts[0]?.id
+      });
     } catch (err) {
       console.error("Error fetching accounts:", err);
     }
   };
 
   const indexGoogleData = async () => {
-    const hasAnyAccount = googleAccounts.gmail || googleAccounts.calendar || googleAccounts.contacts;
+    const hasAnyAccount = selectedAccounts.gmail || selectedAccounts.calendar || selectedAccounts.contacts;
     if (!hasAnyAccount) {
-      setError("Please connect at least one Google account");
+      setError("Please select at least one account");
       return;
     }
 
@@ -79,6 +86,11 @@ export default function GoogleIndexDemo() {
     setIndexedData(null);
 
     try {
+      // Get current date for calendar query
+      const now = new Date();
+      const timeMin = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days ago
+      const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days from now
+
       const response = await fetch("/api/google-index", {
         method: "POST",
         headers: {
@@ -86,14 +98,16 @@ export default function GoogleIndexDemo() {
         },
         body: JSON.stringify({
           accounts: {
-            gmail: googleAccounts.gmail?.id,
-            calendar: googleAccounts.calendar?.id,
-            contacts: googleAccounts.contacts?.id,
+            gmail: selectedAccounts.gmail,
+            calendar: selectedAccounts.calendar,
+            contacts: selectedAccounts.contacts,
           },
           external_user_id: userId,
           type: "all",
           options: {
-            maxResults: 10,
+            maxResults: 20,
+            timeMin: timeMin,
+            timeMax: timeMax
           },
         }),
       });
@@ -102,6 +116,22 @@ export default function GoogleIndexDemo() {
 
       if (!response.ok) {
         throw new Error(data.error || "Request failed");
+      }
+
+      // Sort messages by date (newest first)
+      if (data.data.messages) {
+        data.data.messages.sort((a: ProcessedGmailMessage, b: ProcessedGmailMessage) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+      }
+
+      // Sort events by start time (upcoming first)
+      if (data.data.events) {
+        data.data.events.sort((a: CalendarEvent, b: CalendarEvent) => {
+          const aTime = new Date(a.start.dateTime || a.start.date || 0).getTime();
+          const bTime = new Date(b.start.dateTime || b.start.date || 0).getTime();
+          return aTime - bTime;
+        });
       }
 
       setIndexedData(data.data);
@@ -129,33 +159,40 @@ export default function GoogleIndexDemo() {
     return d.toLocaleString();
   };
 
-  const renderAccountStatus = () => {
+  const formatRelativeTime = (date: Date | string) => {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return d.toLocaleDateString();
+  };
+
+  const renderAccountSelector = (serviceType: 'gmail' | 'calendar' | 'contacts', label: string) => {
+    const serviceAccounts = googleAccounts[serviceType];
+    if (serviceAccounts.length === 0) return null;
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <div className="border rounded p-3">
-          <div className="text-sm font-medium text-gray-700 mb-1">Gmail</div>
-          {googleAccounts.gmail ? (
-            <div className="text-xs text-green-600">✓ {googleAccounts.gmail.name}</div>
-          ) : (
-            <div className="text-xs text-gray-500">Not connected</div>
-          )}
-        </div>
-        <div className="border rounded p-3">
-          <div className="text-sm font-medium text-gray-700 mb-1">Calendar</div>
-          {googleAccounts.calendar ? (
-            <div className="text-xs text-green-600">✓ {googleAccounts.calendar.name}</div>
-          ) : (
-            <div className="text-xs text-gray-500">Not connected</div>
-          )}
-        </div>
-        <div className="border rounded p-3">
-          <div className="text-sm font-medium text-gray-700 mb-1">Contacts</div>
-          {googleAccounts.contacts ? (
-            <div className="text-xs text-green-600">✓ {googleAccounts.contacts.name}</div>
-          ) : (
-            <div className="text-xs text-gray-500">Not connected</div>
-          )}
-        </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <select
+          value={selectedAccounts[serviceType] || ''}
+          onChange={(e) => setSelectedAccounts(prev => ({ ...prev, [serviceType]: e.target.value }))}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+        >
+          <option value="">None</option>
+          {serviceAccounts.map(account => (
+            <option key={account.id} value={account.id}>
+              {account.name}
+            </option>
+          ))}
+        </select>
       </div>
     );
   };
@@ -178,7 +215,7 @@ export default function GoogleIndexDemo() {
     return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Gmail Messages ({indexedData.messages.length})</h3>
-        {indexedData.messages.map((message) => (
+        {indexedData.messages.map((message: ProcessedGmailMessage) => (
           <div key={message.id} className="border border-gray-200 rounded-lg">
             <button
               onClick={() => toggleMessageExpansion(message.id)}
@@ -186,9 +223,9 @@ export default function GoogleIndexDemo() {
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-gray-900 truncate">{message.subject}</h4>
+                  <h4 className="font-medium text-gray-900 truncate">{message.subject || '(No subject)'}</h4>
                   <p className="text-sm text-gray-600 mt-1">From: {message.from}</p>
-                  <p className="text-sm text-gray-500 mt-1">{formatDate(message.date)}</p>
+                  <p className="text-sm text-gray-500 mt-1">{formatRelativeTime(message.date)}</p>
                   <p className="text-sm text-gray-700 mt-2 line-clamp-2">{message.snippet}</p>
                 </div>
                 <svg
@@ -276,50 +313,63 @@ export default function GoogleIndexDemo() {
       return <p className="text-gray-500">No events found</p>;
     }
 
+    const now = new Date();
+    const upcomingEvents = indexedData.events.filter((event: CalendarEvent) => {
+      const eventTime = new Date(event.start.dateTime || event.start.date || 0);
+      return eventTime >= now;
+    });
+    const pastEvents = indexedData.events.filter((event: CalendarEvent) => {
+      const eventTime = new Date(event.start.dateTime || event.start.date || 0);
+      return eventTime < now;
+    });
+
     return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Calendar Events ({indexedData.events.length})</h3>
-        {indexedData.events.map((event) => (
-          <div key={event.id} className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900">{event.summary}</h4>
-            <div className="mt-2 space-y-2 text-sm text-gray-600">
-              <div>
-                <span className="font-medium">Start:</span> {event.start.dateTime ? formatDate(event.start.dateTime) : event.start.date}
-              </div>
-              <div>
-                <span className="font-medium">End:</span> {event.end.dateTime ? formatDate(event.end.dateTime) : event.end.date}
-              </div>
-              {event.location && (
-                <div>
-                  <span className="font-medium">Location:</span> {event.location}
-                </div>
-              )}
-              {event.description && (
-                <div>
-                  <span className="font-medium">Description:</span>
-                  <div className="mt-1 max-h-32 overflow-y-auto bg-gray-50 p-2 rounded">
-                    <pre className="text-xs whitespace-pre-wrap">{event.description}</pre>
-                  </div>
-                </div>
-              )}
-              {event.attendees && event.attendees.length > 0 && (
-                <div>
-                  <span className="font-medium">Attendees ({event.attendees.length}):</span>
-                  <div className="mt-1 space-y-1">
-                    {event.attendees.map((attendee, index) => (
-                      <div key={index} className="text-xs bg-gray-50 p-1 rounded">
-                        {attendee.displayName || attendee.email} - {attendee.responseStatus}
+      <div className="space-y-6">
+        {upcomingEvents.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Upcoming Events ({upcomingEvents.length})</h3>
+            <div className="space-y-3">
+              {upcomingEvents.map((event: CalendarEvent) => (
+                <div key={event.id} className="border border-gray-200 rounded-lg p-4 bg-blue-50 border-blue-200">
+                  <h4 className="font-medium text-gray-900">{event.summary}</h4>
+                  <div className="mt-2 space-y-2 text-sm text-gray-600">
+                    <div>
+                      <span className="font-medium">Start:</span> {event.start.dateTime ? formatDate(event.start.dateTime) : event.start.date}
+                    </div>
+                    {event.location && (
+                      <div>
+                        <span className="font-medium">Location:</span> {event.location}
                       </div>
-                    ))}
+                    )}
+                    {event.attendees && event.attendees.length > 0 && (
+                      <div>
+                        <span className="font-medium">Attendees:</span> {event.attendees.length}
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-              <div>
-                <span className="font-medium">Status:</span> {event.status}
-              </div>
+              ))}
             </div>
           </div>
-        ))}
+        )}
+
+        {pastEvents.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Past Events ({pastEvents.length})</h3>
+            <div className="space-y-3">
+              {pastEvents.map((event: CalendarEvent) => (
+                <div key={event.id} className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900">{event.summary}</h4>
+                  <div className="mt-2 space-y-2 text-sm text-gray-600">
+                    <div>
+                      <span className="font-medium">Was on:</span> {event.start.dateTime ? formatDate(event.start.dateTime) : event.start.date}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -343,7 +393,7 @@ export default function GoogleIndexDemo() {
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Contacts ({indexedData.contacts.length})</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {indexedData.contacts.map((contact) => (
+          {indexedData.contacts.map((contact: Contact) => (
             <div key={contact.resourceName} className="border border-gray-200 rounded-lg p-4">
               <h4 className="font-medium text-gray-900">
                 {contact.names?.[0]?.displayName || 'No Name'}
@@ -381,17 +431,6 @@ export default function GoogleIndexDemo() {
                   ))}
                 </div>
               )}
-
-              {contact.addresses && contact.addresses.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-xs font-medium text-gray-700">Address:</p>
-                  {contact.addresses.map((address, index) => (
-                    <p key={index} className="text-sm text-gray-600">
-                      {address.formattedValue} {address.type && `(${address.type})`}
-                    </p>
-                  ))}
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -413,17 +452,20 @@ export default function GoogleIndexDemo() {
 
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Configuration
+            Select Accounts
           </h2>
 
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Connected Accounts:</h3>
-          {renderAccountStatus()}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {renderAccountSelector('gmail', 'Gmail Account')}
+            {renderAccountSelector('calendar', 'Calendar Account')}
+            {renderAccountSelector('contacts', 'Contacts Account')}
+          </div>
 
           <button
             onClick={indexGoogleData}
-            disabled={loading || (!googleAccounts.gmail && !googleAccounts.calendar && !googleAccounts.contacts)}
+            disabled={loading || (!selectedAccounts.gmail && !selectedAccounts.calendar && !selectedAccounts.contacts)}
             className={`w-full py-2 px-4 rounded-md font-medium transition-colors ${
-              loading || (!googleAccounts.gmail && !googleAccounts.calendar && !googleAccounts.contacts)
+              loading || (!selectedAccounts.gmail && !selectedAccounts.calendar && !selectedAccounts.contacts)
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
@@ -431,11 +473,14 @@ export default function GoogleIndexDemo() {
             {loading ? "Indexing Google Data..." : "Index Google Data"}
           </button>
 
-          <p className="text-sm text-gray-500 mt-2">
-            <a href="/me" className="text-blue-600 hover:text-blue-700">
-              Manage connected accounts
-            </a>
-          </p>
+          {(googleAccounts.gmail.length === 0 && googleAccounts.calendar.length === 0 && googleAccounts.contacts.length === 0) && (
+            <p className="text-sm text-gray-500 mt-2">
+              No Google accounts found. 
+              <a href="/me" className="text-blue-600 hover:text-blue-700 ml-1">
+                Connect your Google accounts
+              </a>
+            </p>
+          )}
         </div>
 
         {error && (
