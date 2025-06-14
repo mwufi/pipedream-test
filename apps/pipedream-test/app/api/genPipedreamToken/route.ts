@@ -9,6 +9,7 @@ export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const userId = searchParams.get('userId');
+        console.log(process.env.PIPEDREAM_ENVIRONMENT);
 
         if (!userId) {
             return NextResponse.json({ error: "userId is required" }, { status: 400 });

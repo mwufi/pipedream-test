@@ -8,6 +8,8 @@ export default function Home() {
   const [connectionStatus, setConnectionStatus] = useState<string>("");
   const [connectedAccount, setConnectedAccount] = useState<any>(null);
 
+  console.log("new version!");
+
   async function connectToGoogle() {
     setIsConnecting(true);
     setConnectionStatus("Generating connection token...");

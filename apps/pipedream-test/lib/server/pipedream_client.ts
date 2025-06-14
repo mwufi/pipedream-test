@@ -1,8 +1,8 @@
-import { createBackendClient } from "@pipedream/sdk/server";
+import { createBackendClient, ProjectEnvironment } from "@pipedream/sdk/server";
 
 // This code runs on your server
 const pd = createBackendClient({
-    environment: process.env.PIPEDREAM_ENVIRONMENT!,
+    environment: process.env.PIPEDREAM_ENVIRONMENT! as ProjectEnvironment || "development",
     credentials: {
         clientId: process.env.PIPEDREAM_CLIENT_ID!,
         clientSecret: process.env.PIPEDREAM_CLIENT_SECRET!,
