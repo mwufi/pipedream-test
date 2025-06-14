@@ -143,6 +143,12 @@ export default function Home() {
                 Manage All Connected Accounts
               </a>
               <a
+                href="/api-proxy-demo"
+                className="block w-full text-center bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                Try API Proxy Demo
+              </a>
+              <a
                 href="/pipedream-demo"
                 className="block w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
               >

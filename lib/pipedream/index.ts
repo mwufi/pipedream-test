@@ -45,6 +45,25 @@ export interface ConfigureComponentOptions {
   prop_name: string;
 }
 
+export interface ProxyRequestOptions {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: any;
+}
+
+export interface ProxyRequestParams {
+  account_id: string;
+  external_user_id: string;
+  target_url: string;
+  options?: ProxyRequestOptions;
+}
+
+export interface ProxyRequestResponse {
+  status: number;
+  headers: Record<string, string>;
+  body: any;
+}
+
 class PipedreamAPI {
   // Token Management
   async createConnectToken(options: CreateConnectTokenOptions): Promise<ConnectTokenResponse> {
@@ -150,6 +169,55 @@ class PipedreamAPI {
       return response;
     } catch (error) {
       throw new Error(`Failed to configure component: ${error}`);
+    }
+  }
+
+  // Proxy Request
+  async makeProxyRequest(params: ProxyRequestParams): Promise<ProxyRequestResponse> {
+    try {
+      const { account_id, external_user_id, target_url, options } = params;
+      
+      // Validate required parameters
+      if (!account_id) {
+        throw new Error("account_id is required");
+      }
+      if (!external_user_id) {
+        throw new Error("external_user_id is required");
+      }
+      if (!target_url) {
+        throw new Error("target_url is required");
+      }
+
+      // Make the proxy request using the Pipedream SDK with correct signature
+      const response = await pd.makeProxyRequest(
+        {
+          searchParams: {
+            account_id,
+            external_user_id,
+          }
+        },
+        {
+          url: target_url,
+          options: {
+            method: (options?.method || "GET") as "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
+            headers: options?.headers,
+            body: options?.body ? JSON.stringify(options.body) : undefined,
+          }
+        }
+      );
+
+      // The response is just the body data
+      return {
+        status: 200, // Pipedream doesn't return status in the response
+        headers: {},
+        body: response,
+      };
+    } catch (error) {
+      // Handle specific error types if needed
+      if (error instanceof Error) {
+        throw new Error(`Proxy request failed: ${error.message}`);
+      }
+      throw new Error(`Proxy request failed: ${error}`);
     }
   }
 }
