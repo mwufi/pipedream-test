@@ -85,7 +85,7 @@ class PipedreamAPI {
   async listAccounts(options?: ListAccountsOptions): Promise<any> {
     try {
       const accounts = await pd.getAccounts({
-        app_name: options?.app,
+        app: options?.app,
         oauth_app_id: options?.oauth_app_id,
         external_user_id: options?.external_user_id,
         include_credentials: options?.include_credentials,
