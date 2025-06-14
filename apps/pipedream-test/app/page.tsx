@@ -156,6 +156,12 @@ export default function Home() {
               >
                 View All Pipedream API Functions
               </a>
+              <a
+                href="/google-index-demo"
+                className="block w-full text-center bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                Google Data Indexer Demo
+              </a>
             </div>
           </div>
         </div>
