@@ -33,43 +33,43 @@ const SUPPORTED_SERVICES: Service[] = [
   {
     name: "Google Sheets",
     slug: "google_sheets",
-    icon: "https://assets.pipedream.net/s.v0/app_168hvn/logo/orig",
+    icon: "", // Will be populated from API
     description: "Create and edit online spreadsheets"
   },
   {
     name: "Google Drive",
     slug: "google_drive",
-    icon: "https://assets.pipedream.net/s.v0/app_XzX7hr/logo/orig",
+    icon: "",
     description: "Store and share files in the cloud"
   },
   {
     name: "Google Calendar",
     slug: "google_calendar",
-    icon: "https://assets.pipedream.net/s.v0/app_lABhXZ/logo/orig",
+    icon: "",
     description: "Organize your schedule and share events"
   },
   {
     name: "Gmail",
     slug: "gmail",
-    icon: "https://assets.pipedream.net/s.v0/app_1Yo7jL/logo/orig",
+    icon: "",
     description: "Send and receive email"
   },
   {
     name: "Google Contacts",
     slug: "google_contacts",
-    icon: "https://assets.pipedream.net/s.v0/app_YzBhA7/logo/orig",
+    icon: "",
     description: "Manage your contacts"
   },
   {
     name: "Notion",
     slug: "notion",
-    icon: "https://assets.pipedream.net/s.v0/app_1xohRm/logo/orig",
+    icon: "",
     description: "All-in-one workspace for notes and collaboration"
   },
   {
     name: "Slack",
     slug: "slack",
-    icon: "https://assets.pipedream.net/s.v0/app_mzBhDp/logo/orig",
+    icon: "",
     description: "Team communication and collaboration"
   },
 ];
@@ -218,15 +218,21 @@ export default function MePage() {
                   >
                     <div className="flex items-center space-x-4">
                       <img
-                        src={service.icon}
+                        src={account?.app.img_src || `https://api.dicebear.com/7.x/identicon/svg?seed=${service.slug}`}
                         alt={service.name}
-                        className="w-12 h-12 rounded-lg"
+                        className="w-12 h-12 rounded-lg object-cover"
+                        onError={(e) => {
+                          // Fallback to a placeholder if image fails to load
+                          (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/identicon/svg?seed=${service.slug}`;
+                        }}
                       />
                       <div>
                         <h3 className="text-lg font-medium text-gray-900">
-                          {service.name}
+                          {account?.app.name || service.name}
                         </h3>
-                        <p className="text-sm text-gray-500">{service.description}</p>
+                        <p className="text-sm text-gray-500">
+                          {account?.app.description || service.description}
+                        </p>
                         {account && (
                           <p className="text-xs text-gray-400 mt-1">
                             Connected as: {account.name}
