@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Turborepo kitchen sink starter
 
-## Getting Started
+This Turborepo starter is maintained by the Turborepo core team.
 
-First, run the development server:
+This example also shows how to use [Workspace Configurations](https://turborepo.com/docs/core-concepts/monorepos/configuring-workspaces).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Using this example
+
+Run the following command:
+
+```sh
+npx create-turbo@latest -e kitchen-sink
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What's inside?
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+This Turborepo includes the following packages and apps:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Apps and Packages
 
-## Learn More
+- `api`: an [Express](https://expressjs.com/) server
+- `storefront`: a [Next.js](https://nextjs.org/) app
+- `admin`: a [Vite](https://vitejs.dev/) single page app
+- `blog`: a [Remix](https://remix.run/) blog
+- `@repo/eslint-config`: ESLint configurations used throughout the monorepo
+- `@repo/jest-presets`: Jest configurations
+- `@repo/logger`: isomorphic logger (a small wrapper around console.log)
+- `@repo/ui`: a dummy React UI library (which contains `<CounterButton>` and `<Link>` components)
+- `@repo/typescript-config`: tsconfig.json's used throughout the monorepo
 
-To learn more about Next.js, take a look at the following resources:
+Each package and app is 100% [TypeScript](https://www.typescriptlang.org/).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Utilities
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This Turborepo has some additional tools already setup for you:
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [TypeScript](https://www.typescriptlang.org/) for static type checking
+- [ESLint](https://eslint.org/) for code linting
+- [Jest](https://jestjs.io) test runner for all things JavaScript
+- [Prettier](https://prettier.io) for code formatting
