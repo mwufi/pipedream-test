@@ -135,7 +135,13 @@ export default function Home() {
             <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
               This connects to Google Sheets via Pipedream SDK
             </p>
-            <div className="mt-4">
+            <div className="mt-4 space-y-2">
+              <a
+                href="/me"
+                className="block w-full text-center bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                Manage All Connected Accounts
+              </a>
               <a
                 href="/pipedream-demo"
                 className="block w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
