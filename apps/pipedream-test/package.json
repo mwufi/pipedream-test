@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "notion": "bun run fetchNotionExample.ts"
   },
   "dependencies": {
     "@pipedream/sdk": "^1.6.9",

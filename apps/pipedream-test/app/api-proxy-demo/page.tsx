@@ -137,18 +137,122 @@ const API_EXAMPLES: ApiExample[] = [
   // Notion
   {
     service: "notion",
-    name: "Search Pages",
+    name: "Search All Content",
     method: "POST",
     endpoint: "https://api.notion.com/v1/search",
-    description: "Search for pages in your Notion workspace",
+    description: "Search all pages and databases in your workspace",
     body: {
-      query: "meeting",
+      page_size: 10,
+      sort: {
+        direction: "descending",
+        timestamp: "last_edited_time"
+      }
+    },
+    headers: {
+      "Notion-Version": "2022-06-28"
+    }
+  },
+  {
+    service: "notion",
+    name: "Search Pages Only",
+    method: "POST",
+    endpoint: "https://api.notion.com/v1/search",
+    description: "Search only pages (not databases)",
+    body: {
+      query: "",
       filter: {
         property: "object",
         value: "page"
       },
-      page_size: 5
+      page_size: 10
     },
+    headers: {
+      "Notion-Version": "2022-06-28"
+    }
+  },
+  {
+    service: "notion",
+    name: "Search Databases Only",
+    method: "POST",
+    endpoint: "https://api.notion.com/v1/search",
+    description: "Search only databases (not pages)",
+    body: {
+      query: "",
+      filter: {
+        property: "object",
+        value: "database"
+      },
+      page_size: 10
+    },
+    headers: {
+      "Notion-Version": "2022-06-28"
+    }
+  },
+  {
+    service: "notion",
+    name: "Get Page Content",
+    method: "GET",
+    endpoint: "https://api.notion.com/v1/pages/{page_id}",
+    description: "Get a page's properties (replace {page_id} with actual ID)",
+    headers: {
+      "Notion-Version": "2022-06-28"
+    }
+  },
+  {
+    service: "notion",
+    name: "Get Page Blocks",
+    method: "GET",
+    endpoint: "https://api.notion.com/v1/blocks/{page_id}/children?page_size=100",
+    description: "Get all blocks (content) of a page (replace {page_id})",
+    headers: {
+      "Notion-Version": "2022-06-28"
+    }
+  },
+  {
+    service: "notion",
+    name: "Get Database",
+    method: "GET",
+    endpoint: "https://api.notion.com/v1/databases/{database_id}",
+    description: "Get database schema and properties (replace {database_id})",
+    headers: {
+      "Notion-Version": "2022-06-28"
+    }
+  },
+  {
+    service: "notion",
+    name: "Query Database",
+    method: "POST",
+    endpoint: "https://api.notion.com/v1/databases/{database_id}/query",
+    description: "Query database items with filters (replace {database_id})",
+    body: {
+      page_size: 10,
+      sorts: [
+        {
+          timestamp: "created_time",
+          direction: "descending"
+        }
+      ]
+    },
+    headers: {
+      "Notion-Version": "2022-06-28"
+    }
+  },
+  {
+    service: "notion",
+    name: "List All Users",
+    method: "GET",
+    endpoint: "https://api.notion.com/v1/users",
+    description: "List all users in your workspace",
+    headers: {
+      "Notion-Version": "2022-06-28"
+    }
+  },
+  {
+    service: "notion",
+    name: "Get Current User",
+    method: "GET",
+    endpoint: "https://api.notion.com/v1/users/me",
+    description: "Get information about the bot user",
     headers: {
       "Notion-Version": "2022-06-28"
     }
