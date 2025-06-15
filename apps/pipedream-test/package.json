@@ -9,7 +9,8 @@
     "lint": "next lint",
     "notion": "bun run fetchNotionExample.ts",
     "notion:write": "bun run writeToNotion.ts",
-    "notion:generate": "bun run notionDataGenerator.ts"
+    "notion:generate": "bun run notionDataGenerator.ts",
+    "notion:content": "bun run notionContentGenerator.ts"
   },
   "dependencies": {
     "@pipedream/sdk": "^1.6.9",
