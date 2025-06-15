@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "notion": "bun run fetchNotionExample.ts"
+    "notion": "bun run fetchNotionExample.ts",
+    "notion:write": "bun run writeToNotion.ts",
+    "notion:generate": "bun run notionDataGenerator.ts"
   },
   "dependencies": {
     "@pipedream/sdk": "^1.6.9",
