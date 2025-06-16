@@ -13,3 +13,6 @@ public/dist
 
 # MeiliSearch
 meili_data
+
+# data lines
+*.jsonl
