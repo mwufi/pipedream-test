@@ -44,7 +44,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen relative overflow-hidden bg-stone-100`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen relative bg-stone-100`}
         >
 
 
