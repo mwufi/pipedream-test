@@ -8,6 +8,7 @@ import {
   SignedOut,
   UserButton,
 } from "@clerk/nextjs";
+import Image from "next/image";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -43,11 +44,13 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen relative overflow-hidden bg-stone-100`}
         >
-          <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-sm border-b border-white/10">
+
+
+          <header className="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-sm border-b border-white/10">
             <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-              <h1 className="text-xl font-bold text-white">Futuristic Mail</h1>
+              <h1 className="text-xl font-bold">Neo Mail</h1>
               <div className="flex gap-4">
                 <SignedOut>
                   <SignInButton mode="modal">
@@ -67,7 +70,7 @@ export default function RootLayout({
               </div>
             </div>
           </header>
-          <main className="pt-20">
+          <main className="relative z-20 pt-20 min-h-screen bg-gray-100">
             {children}
           </main>
         </body>
