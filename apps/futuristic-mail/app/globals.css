@@ -3,6 +3,11 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --tw-bg-opacity: 1;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-600: #4b5563;
+  --gray-800: #1f2937;
 }
 
 @theme inline {
@@ -23,4 +28,18 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Custom radial gradient utility */
+.bg-gradient-radial {
+  background-image: radial-gradient(circle, var(--tw-gradient-stops));
+}
+
+/* Color-mix background utilities to match reference design */
+.bg-gray-200-mixed {
+  background-color: color-mix(in srgb, var(--gray-200) calc(var(--tw-bg-opacity) * 100%), transparent);
+}
+
+.bg-gray-300-mixed {
+  background-color: color-mix(in srgb, var(--gray-300) calc(var(--tw-bg-opacity) * 100%), transparent);
 }
