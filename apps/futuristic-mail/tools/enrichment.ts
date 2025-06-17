@@ -1,5 +1,6 @@
 import { z } from "zod";
 import db from "@/lib/instant_clientside_db";
+import { id } from "@instantdb/react";
 
 // Schema for the enrichment tool input
 export const enrichmentToolSchema = z.object({
@@ -38,12 +39,12 @@ export interface EnrichmentResultWithMeta {
 
 // The enrichment tool function
 export async function enrichPersonTool(input: EnrichmentInput): Promise<EnrichmentResultWithMeta> {
-    const enrichmentId = `enrich_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const enrichmentId = id()
 
     // Create initial enrichment record with pending status
     const initialRecord = {
         id: enrichmentId,
-        personDetails: input,
+        personDetails: JSON.stringify(input),
         linkedinProfiles: [],
         professionalInfo: {},
         recentNews: [],
@@ -59,8 +60,11 @@ export async function enrichPersonTool(input: EnrichmentInput): Promise<Enrichme
             db.tx.enrichments[enrichmentId].update(initialRecord)
         );
 
+        // Get the Restate ingress URL from environment variable
+        const restateIngressUrl = process.env.NEXT_PUBLIC_RESTATE_INGRESS_URL || 'http://localhost:8080';
+
         // Call the Restate enrichment service
-        const response = await fetch('/restate/v1/enrich/enrichPerson', {
+        const response = await fetch(`${restateIngressUrl}/enrich/enrichPerson`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -105,37 +109,4 @@ export async function enrichPersonTool(input: EnrichmentInput): Promise<Enrichme
 
         return errorRecord;
     }
-}
-
-// Helper function to get enrichment by ID
-export async function getEnrichment(id: string): Promise<EnrichmentResultWithMeta | null> {
-    const result = await db.queryOnce({
-        enrichments: {
-            $: {
-                where: {
-                    id: id
-                }
-            }
-        }
-    });
-
-    return result.enrichments?.[0] || null;
-}
-
-// Helper function to get all enrichments
-export async function getAllEnrichments(): Promise<EnrichmentResultWithMeta[]> {
-    const result = await db.queryOnce({
-        enrichments: {}
-    });
-
-    return result.enrichments || [];
-}
-
-// Mastra tool definition for the EmailAgent
-export const enrichmentMastraTool = {
-    enrichPerson: {
-        description: "Enrich information about a person by finding their LinkedIn profile, professional information, recent news, and social profiles. This tool searches the web to gather comprehensive information about individuals.",
-        schema: enrichmentToolSchema,
-        execute: enrichPersonTool,
-    },
-}; 
+} 
