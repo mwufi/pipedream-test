@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import {
   ClerkProvider,
@@ -26,15 +27,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Futuristic Mail",
   description: "Next-generation email experience",
+};
+
+export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#ffffff" }
   ],
-  other: {
-    "msapplication-TileColor": "#ffffff",
-    "msapplication-navbutton-color": "#ffffff",
-    "apple-mobile-web-app-status-bar-style": "light-content"
-  }
 };
 
 export default function RootLayout({
