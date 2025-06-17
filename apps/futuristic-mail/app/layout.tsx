@@ -71,7 +71,16 @@ export default function RootLayout({
               </div>
             </div>
           </header>
-          <main className="relative z-20 pt-20 min-h-screen bg-gray-100">
+          <main className="relative z-20 pt-10 min-h-screen bg-gray-100 overflow-hidden">
+            {/* Faint blue background glow */}
+            <Image
+              src="/glow@q25r.c93b1d41.avif"
+              alt=""
+              width={1800}
+              height={1800}
+              className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[150vh] max-w-none -translate-x-1/2 -translate-y-1/2 select-none mix-blend-overlay"
+              style={{ color: 'transparent' }}
+            />
             {children}
           </main>
           <SignedIn>

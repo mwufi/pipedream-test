@@ -6,16 +6,7 @@ import { currentUser } from "@clerk/nextjs/server";
 export default async function Home() {
   const user = await currentUser();
   return (
-    <div className="relative flex flex-col items-center px-4 py-6 h-full">
-      {/* Faint blue background glow */}
-      <Image
-        src="/glow@q25r.c93b1d41.avif"
-        alt=""
-        width={1800}
-        height={1800}
-        className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[150vh] max-w-none -translate-x-1/2 -translate-y-1/2 select-none mix-blend-overlay"
-        style={{ color: 'transparent' }}
-      />
+    <div className="relative flex flex-col items-center px-4 py-6 h-full min-h-[calc(100vh-100px)] overflow-hidden">
       {/* Main container with constrained width */}
       <div className="relative flex w-full max-w-[25rem] flex-1 flex-col justify-center gap-y-6">
         <main className="relative grid flex-1 content-center">

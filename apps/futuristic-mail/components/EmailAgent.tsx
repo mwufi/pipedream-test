@@ -8,8 +8,9 @@ export default function EmailAgent() {
   const [isHovered, setIsHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const hoverTimeoutRef = useRef<number | undefined>(undefined);
   const { user } = useUser();
-  
+
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: "/api/chat",
     initialMessages: [
@@ -30,28 +31,52 @@ export default function EmailAgent() {
   }, [isExpanded]);
 
   const handleMouseEnter = () => {
+    // Clear any pending timeout
+    if (hoverTimeoutRef.current) {
+      window.clearTimeout(hoverTimeoutRef.current);
+    }
+
     setIsHovered(true);
-    setTimeout(() => setIsExpanded(true), 200);
+    // Delay expansion slightly to prevent rapid state changes
+    hoverTimeoutRef.current = window.setTimeout(() => {
+      setIsExpanded(true);
+    }, 150);
   };
 
   const handleMouseLeave = () => {
+    // Clear any pending timeout
+    if (hoverTimeoutRef.current) {
+      window.clearTimeout(hoverTimeoutRef.current);
+    }
+
     setIsHovered(false);
-    setTimeout(() => setIsExpanded(false), 300);
+    // Delay collapse to give user time to move between elements
+    hoverTimeoutRef.current = window.setTimeout(() => {
+      setIsExpanded(false);
+    }, 300);
   };
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        window.clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <div 
+    <div
       className="fixed bottom-6 right-6 z-50"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Chat Interface */}
       <div
-        className={`absolute bottom-0 right-0 transition-all duration-300 ${
-          isExpanded 
-            ? "w-80 h-96 mb-20 opacity-100 translate-y-0" 
-            : "w-16 h-16 opacity-0 translate-y-4 pointer-events-none"
-        }`}
+        className={`absolute bottom-0 right-0 transition-all duration-300 ${isExpanded
+          ? "w-80 h-96 mb-20 opacity-100 translate-y-0"
+          : "w-16 h-16 opacity-0 translate-y-4 pointer-events-none"
+          }`}
       >
         <div className="w-full h-full bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl flex flex-col overflow-hidden">
           {/* Header */}
@@ -67,16 +92,14 @@ export default function EmailAgent() {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
               >
                 <div
-                  className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
-                    message.role === "user"
-                      ? "bg-blue-500/20 text-blue-900"
-                      : "bg-gray-100/50 text-gray-800"
-                  }`}
+                  className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${message.role === "user"
+                    ? "bg-blue-500/20 text-blue-900"
+                    : "bg-gray-100/50 text-gray-800"
+                    }`}
                 >
                   {message.content}
                 </div>
@@ -116,7 +139,7 @@ export default function EmailAgent() {
           <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-full animate-pulse" />
           <div className="absolute inset-0 bg-gradient-to-tr from-pink-400 via-purple-500 to-blue-500 rounded-full animate-pulse animation-delay-1000 mix-blend-multiply" />
           <div className="absolute inset-1 bg-white/20 backdrop-blur-sm rounded-full" />
-          
+
           {/* Eyes */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="flex gap-2">
@@ -127,7 +150,7 @@ export default function EmailAgent() {
         </div>
 
         {/* Speech Bubble */}
-        {!isHovered && lastAssistantMessage && (
+        {!isHovered && !isExpanded && lastAssistantMessage && (
           <div className="absolute bottom-full right-0 mb-2 animate-fade-in">
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl px-3 py-2 shadow-lg max-w-xs">
               <p className="text-xs text-gray-700 line-clamp-2">
