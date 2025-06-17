@@ -11,6 +11,7 @@ import {
 import Image from "next/image";
 import EmailAgent from "@/components/EmailAgent";
 import "./globals.css";
+import ClerkSignedInComponent from "@/components/ClerkSignedInComponent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -85,6 +86,7 @@ export default function RootLayout({
           </main>
           <SignedIn>
             <EmailAgent />
+            <ClerkSignedInComponent />
           </SignedIn>
         </body>
       </html>
