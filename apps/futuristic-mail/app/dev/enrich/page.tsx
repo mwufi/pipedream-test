@@ -257,8 +257,8 @@ export default function EnrichDevPage() {
                                             key={enrichment.id}
                                             onClick={() => setSelectedEnrichment(enrichment.id)}
                                             className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md ${selectedEnrichment === enrichment.id
-                                                    ? 'border-purple-500 bg-purple-50'
-                                                    : 'border-gray-200 bg-white/80 hover:border-gray-300'
+                                                ? 'border-purple-500 bg-purple-50'
+                                                : 'border-gray-200 bg-white/80 hover:border-gray-300'
                                                 }`}
                                         >
                                             <div className="flex items-start justify-between">

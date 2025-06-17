@@ -56,20 +56,23 @@ export async function enrichPersonTool(input: EnrichmentInput): Promise<Enrichme
 
     try {
         // Store the initial record in InstantDB
-        await db.transact(
+        await db.transact([
             db.tx.enrichments[enrichmentId].update(initialRecord)
-        );
+        ]);
+
+        // Small delay to ensure the record is persisted
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Get the Restate ingress URL from environment variable
         const restateIngressUrl = process.env.NEXT_PUBLIC_RESTATE_INGRESS_URL || 'http://localhost:8080';
 
-        // Call the Restate enrichment service
+        // Call the Restate enrichment service with enrichmentId
         const response = await fetch(`${restateIngressUrl}/enrich/enrichPerson`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(input),
+            body: JSON.stringify({ enrichmentId, personDetails: input }),
         });
 
         if (!response.ok) {
@@ -86,9 +89,9 @@ export async function enrichPersonTool(input: EnrichmentInput): Promise<Enrichme
             completedAt: Date.now(),
         };
 
-        await db.transact(
+        await db.transact([
             db.tx.enrichments[enrichmentId].update(completedRecord)
-        );
+        ]);
 
         return completedRecord;
 
@@ -103,9 +106,9 @@ export async function enrichPersonTool(input: EnrichmentInput): Promise<Enrichme
             error: error instanceof Error ? error.message : 'Unknown error',
         };
 
-        await db.transact(
+        await db.transact([
             db.tx.enrichments[enrichmentId].update(errorRecord)
-        );
+        ]);
 
         return errorRecord;
     }

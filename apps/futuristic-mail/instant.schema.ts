@@ -28,6 +28,7 @@ const _schema = i.schema({
       socialProfiles: i.any(),
       summary: i.string().optional(),
       status: i.string().indexed(),
+      phase: i.string().optional(),
       createdAt: i.number().indexed(),
       completedAt: i.number().optional(),
       error: i.string().optional(),
