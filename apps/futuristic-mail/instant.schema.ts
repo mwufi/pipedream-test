@@ -19,6 +19,19 @@ const _schema = i.schema({
       done: i.boolean().optional(),
       text: i.string().optional(),
     }),
+    enrichments: i.entity({
+      id: i.string().unique().indexed(),
+      personDetails: i.json(),
+      linkedinProfiles: i.json(),
+      professionalInfo: i.json(),
+      recentNews: i.json(),
+      socialProfiles: i.json(),
+      summary: i.string().optional(),
+      status: i.string().indexed(),
+      createdAt: i.number().indexed(),
+      completedAt: i.number().optional(),
+      error: i.string().optional(),
+    }),
   },
   links: {
     todosAuthor: {
@@ -34,15 +47,29 @@ const _schema = i.schema({
         label: "todos",
       },
     },
+    enrichmentsAuthor: {
+      forward: {
+        on: "enrichments",
+        has: "one",
+        label: "author",
+        onDelete: "cascade",
+      },
+      reverse: {
+        on: "$users",
+        has: "many",
+        label: "enrichments",
+      },
+    },
   },
   rooms: {},
 });
 
 // This helps Typescript display nicer intellisense
 type _AppSchema = typeof _schema;
-interface AppSchema extends _AppSchema {}
+interface AppSchema extends _AppSchema { }
 const schema: AppSchema = _schema;
 
 type Todo = InstaQLEntity<typeof schema, "todos">;
-export type { AppSchema, Todo };
+type Enrichment = InstaQLEntity<typeof schema, "enrichments">;
+export type { AppSchema, Todo, Enrichment };
 export default schema;
