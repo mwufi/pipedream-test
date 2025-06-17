@@ -9,6 +9,7 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import Image from "next/image";
+import EmailAgent from "@/components/EmailAgent";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -73,6 +74,9 @@ export default function RootLayout({
           <main className="relative z-20 pt-20 min-h-screen bg-gray-100">
             {children}
           </main>
+          <SignedIn>
+            <EmailAgent />
+          </SignedIn>
         </body>
       </html>
     </ClerkProvider>
