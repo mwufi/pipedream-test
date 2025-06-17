@@ -2,9 +2,11 @@ import Image from "next/image";
 import SvgGrid from "@/components/SvgGrid";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
+import ProfileCheck from "@/components/ProfileCheck";
 
 export default async function Home() {
   const user = await currentUser();
+  
   return (
     <div className="relative flex flex-col items-center px-4 py-6 h-full min-h-[calc(100vh-100px)] overflow-hidden">
       {/* Main container with constrained width */}
@@ -35,13 +37,14 @@ export default async function Home() {
                 </SignedOut>
 
                 <SignedIn>
-                  <h1 className="text-4xl font-bold text-gray-800 mb-4">
-                    Welcome back{user?.firstName ? `, ${user.firstName}` : ""}!
-                  </h1>
-                  <p className="text-gray-600 max-w-md mb-8">
-                    Your intelligent inbox is ready. Let's revolutionize how you manage email.
-                  </p>
-                  <div className="grid grid-cols-1 gap-4 w-full max-w-sm">
+                  <ProfileCheck>
+                    <h1 className="text-4xl font-bold text-gray-800 mb-4">
+                      Welcome back{user?.firstName ? `, ${user.firstName}` : ""}!
+                    </h1>
+                    <p className="text-gray-600 max-w-md mb-8">
+                      Your intelligent inbox is ready. Let's revolutionize how you manage email.
+                    </p>
+                    <div className="grid grid-cols-1 gap-4 w-full max-w-sm">
                     <a href="/inbox" className="p-6 bg-white/50 backdrop-blur-sm rounded-2xl border border-gray-200 hover:bg-white/70 transition-colors group">
                       <h3 className="text-xl font-semibold mb-2 group-hover:text-blue-600 transition-colors">
                         📧 Smart Inbox
@@ -67,6 +70,7 @@ export default async function Home() {
                       </p>
                     </a>
                   </div>
+                  </ProfileCheck>
                 </SignedIn>
               </div>
               <SvgGrid />

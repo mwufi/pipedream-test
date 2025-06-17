@@ -33,6 +33,23 @@ const _schema = i.schema({
       completedAt: i.number().optional(),
       error: i.string().optional(),
     }),
+    profiles: i.entity({
+      userId: i.string().unique().indexed(), // Clerk user ID
+      connectedAccounts: i.json<any[]>(),
+      onboarding: i.json<{
+        currentStep: string;
+        completedSteps: string[];
+        stepData: Record<string, any>;
+        completed: boolean;
+        completedAt?: number;
+      }>(),
+      preferences: i.json<{
+        goals: string[];
+        emailRules?: string;
+      }>(),
+      createdAt: i.number(),
+      updatedAt: i.number(),
+    }),
   },
   links: {
     todosAuthor: {
@@ -61,6 +78,19 @@ const _schema = i.schema({
         label: "enrichments",
       },
     },
+    profilesUser: {
+      forward: {
+        on: "profiles",
+        has: "one",
+        label: "user",
+        onDelete: "cascade",
+      },
+      reverse: {
+        on: "$users",
+        has: "one",
+        label: "profile",
+      },
+    },
   },
   rooms: {},
 });
@@ -72,5 +102,6 @@ const schema: AppSchema = _schema;
 
 type Todo = InstaQLEntity<typeof schema, "todos">;
 type Enrichment = InstaQLEntity<typeof schema, "enrichments">;
-export type { AppSchema, Todo, Enrichment };
+type Profile = InstaQLEntity<typeof schema, "profiles">;
+export type { AppSchema, Todo, Enrichment, Profile };
 export default schema;

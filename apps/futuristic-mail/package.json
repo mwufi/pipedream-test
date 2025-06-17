@@ -13,6 +13,7 @@
     "@clerk/nextjs": "^6.22.0",
     "@instantdb/admin": "^0.19.20",
     "@instantdb/react": "^0.19.20",
+    "@pipedream/sdk": "^1.6.9",
     "@repo/sync-helpers": "*",
     "@restatedev/restate-sdk": "^1.6.1",
     "ai": "^4.3.16",
