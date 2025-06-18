@@ -84,6 +84,8 @@ const _schema = i.schema({
       date: i.string(),
       snippet: i.string().optional(),
       labelIds: i.json<string[]>().optional(),
+      historyId: i.string().optional(),
+      internalDate: i.string().optional(),
       syncedAt: i.number(),
     }),
     events: i.entity({
@@ -96,8 +98,10 @@ const _schema = i.schema({
       description: i.string().optional(),
       start: i.string(),
       end: i.string(),
-      attendees: i.json<Array<{email: string, responseStatus?: string}>>().optional(),
+      attendees: i.json<Array<{ email: string, responseStatus?: string }>>().optional(),
       location: i.string().optional(),
+      etag: i.string().optional(),
+      updated: i.string().optional(),
       syncedAt: i.number(),
     }),
     contacts: i.entity({
@@ -110,6 +114,7 @@ const _schema = i.schema({
       phone: i.string().optional(),
       organization: i.string().optional(),
       title: i.string().optional(),
+      etag: i.string().optional(),
       syncedAt: i.number(),
     }),
   },

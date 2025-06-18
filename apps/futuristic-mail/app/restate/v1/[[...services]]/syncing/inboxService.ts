@@ -109,17 +109,16 @@ export const gmailInboxObject = restate.object({
 
       // Get stored sync state
       const lastHistoryId = await ctx.get<string>("lastHistoryId");
-      const lastSyncedAt = await ctx.get<number>("lastSyncedAt");
       const isSyncing = await ctx.get<boolean>("isSyncing");
 
       // Check if already syncing
       if (isSyncing) {
         console.log("\n\n[GmailInbox] Sync already in progress, returning current state");
-        return {
-          status: "already_syncing",
-          lastSyncedAt,
-          lastHistoryId
-        };
+        // return {
+        //   status: "already_syncing",
+        //   lastSyncedAt,
+        //   lastHistoryId
+        // };
       }
 
       // Mark as syncing
@@ -136,15 +135,13 @@ export const gmailInboxObject = restate.object({
         if (needsFullSync) {
           console.log("Performing full sync");
 
-          const profile = await ctx.run("get-profile", async () => {
-            // Get the current history ID first
-            return await ctx.serviceClient(apiService).fetch({
-              accountId,
-              externalUserId,
-              url: "https://gmail.googleapis.com/gmail/v1/users/me/profile",
-              rateLimiterKey: "gmail-api",
-              tokensNeeded: 1
-            });
+          // Get the current history ID first
+          const profile = await ctx.serviceClient(apiService).fetch({
+            accountId,
+            externalUserId,
+            url: "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+            rateLimiterKey: "gmail-api",
+            tokensNeeded: 1
           });
 
           currentHistoryId = profile.historyId;
@@ -152,14 +149,12 @@ export const gmailInboxObject = restate.object({
           // Fetch all messages
           let pageToken: string | undefined;
           do {
-            const messageList = await ctx.run(`fetch-page-${pageToken || 'first'}`, async () => {
-              return await ctx.serviceClient(apiService).fetch({
-                accountId,
-                externalUserId,
-                url: `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100${pageToken ? `&pageToken=${pageToken}` : ''}`,
-                rateLimiterKey: "gmail-api",
-                tokensNeeded: 5
-              });
+            const messageList = await ctx.serviceClient(apiService).fetch({
+              accountId,
+              externalUserId,
+              url: `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100${pageToken ? `&pageToken=${pageToken}` : ''}`,
+              rateLimiterKey: "gmail-api",
+              tokensNeeded: 5
             });
 
             if (!messageList.messages || messageList.messages.length === 0) break;
@@ -169,17 +164,13 @@ export const gmailInboxObject = restate.object({
             for (let i = 0; i < messageList.messages.length; i += batchSize) {
               const batch = messageList.messages.slice(i, i + batchSize);
 
-              const messages = await ctx.run(`fetch-batch-${messagesProcessed}`, async () => {
-                return await Promise.all(
-                  batch.map((msg: { id: string }) =>
-                    fetchMessage(ctx, accountId, externalUserId, msg.id)
-                  )
-                );
-              });
+              const messages = await Promise.all(
+                batch.map((msg: { id: string }) =>
+                  fetchMessage(ctx, accountId, externalUserId, msg.id)
+                )
+              );
 
-              await ctx.run(`store-batch-${messagesProcessed}`, async () => {
-                await storeMessages(messages, accountId, userId);
-              });
+              await storeMessages(messages, accountId, userId);
 
               messagesProcessed += messages.length;
             }
@@ -196,14 +187,12 @@ export const gmailInboxObject = restate.object({
           const messagesToDelete = new Set<string>();
 
           do {
-            const historyList = await ctx.run(`fetch-history-${pageToken || 'first'}`, async () => {
-              return await ctx.serviceClient(apiService).fetch({
-                accountId,
-                externalUserId,
-                url: `https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=${lastHistoryId}&maxResults=100${pageToken ? `&pageToken=${pageToken}` : ''}`,
-                rateLimiterKey: "gmail-api",
-                tokensNeeded: 5
-              });
+            const historyList = await ctx.serviceClient(apiService).fetch({
+              accountId,
+              externalUserId,
+              url: `https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=${lastHistoryId}&maxResults=100${pageToken ? `&pageToken=${pageToken}` : ''}`,
+              rateLimiterKey: "gmail-api",
+              tokensNeeded: 5
             });
 
             if (!historyList.history || historyList.history.length === 0) {
@@ -247,9 +236,7 @@ export const gmailInboxObject = restate.object({
 
           // Delete removed messages
           if (messagesToDelete.size > 0) {
-            await ctx.run("delete-messages", async () => {
-              await deleteMessages(Array.from(messagesToDelete), accountId);
-            });
+            await deleteMessages(Array.from(messagesToDelete), accountId);
           }
 
           // Fetch and store new/modified messages
@@ -260,17 +247,13 @@ export const gmailInboxObject = restate.object({
             for (let i = 0; i < messageIds.length; i += batchSize) {
               const batch = messageIds.slice(i, i + batchSize);
 
-              const messages = await ctx.run(`fetch-modified-batch-${i}`, async () => {
-                return await Promise.all(
-                  batch.map(messageId =>
-                    fetchMessage(ctx, accountId, externalUserId, messageId)
-                  )
-                );
-              });
+              const messages = await Promise.all(
+                batch.map(messageId =>
+                  fetchMessage(ctx, accountId, externalUserId, messageId)
+                )
+              );
 
-              await ctx.run(`store-modified-batch-${i}`, async () => {
-                await storeMessages(messages, accountId, userId);
-              });
+              await storeMessages(messages, accountId, userId);
 
               messagesProcessed += messages.length;
             }

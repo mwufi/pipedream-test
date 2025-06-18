@@ -82,6 +82,7 @@ export default function RestateDev() {
     const [selectedGmailAccount, setSelectedGmailAccount] = useState('');
     const [selectedCalendarAccount, setSelectedCalendarAccount] = useState('');
     const [selectedContactsAccount, setSelectedContactsAccount] = useState('');
+    const [contactSearchQuery, setContactSearchQuery] = useState('');
 
     const restateIngressUrl = process.env.NEXT_PUBLIC_RESTATE_INGRESS_URL || 'http://localhost:8080';
 
@@ -328,15 +329,20 @@ export default function RestateDev() {
                 <div className="grid gap-6 md:grid-cols-2">
                     <ServiceCard
                         title="Gmail Inbox Sync"
-                        description="Sync Gmail messages with rate limiting"
+                        description="Sync Gmail messages with incremental sync support"
                         onCall={() => {
                             if (!selectedGmailAccount) {
                                 alert('Please select a Gmail account');
                                 return;
                             }
-                            callVirtualObject('inboxSync', selectedGmailAccount, 'startSync', { externalUserId });
+                            const voKey = `${selectedGmailAccount}-${externalUserId}`;
+                            callVirtualObject('Gmail_Inbox', voKey, 'sync', { 
+                                accountId: selectedGmailAccount,
+                                externalUserId,
+                                forceFullSync: false 
+                            });
                         }}
-                        responseKey={`inboxSync-${selectedGmailAccount}-startSync`}
+                        responseKey={`Gmail_Inbox-${selectedGmailAccount}-${externalUserId}-sync`}
                         loading={loading}
                         responses={responses}
                     >
@@ -344,6 +350,7 @@ export default function RestateDev() {
                             <p className="text-sm text-gray-600">
                                 Account: <code className="bg-gray-100 px-2 py-1 rounded">{selectedGmailAccount || 'Not selected'}</code>
                             </p>
+                            <p className="text-xs text-gray-500 mt-1">Uses history API for incremental syncing</p>
                         </div>
                     </ServiceCard>
 
@@ -355,14 +362,15 @@ export default function RestateDev() {
                                 alert('Please select a Gmail account');
                                 return;
                             }
-                            callVirtualObject('inboxSync', selectedGmailAccount, 'getSyncStatus');
+                            const voKey = `${selectedGmailAccount}-${externalUserId}`;
+                            callVirtualObject('Gmail_Inbox', voKey, 'getSyncStatus');
                         }}
-                        responseKey={`inboxSync-${selectedGmailAccount}-getSyncStatus`}
+                        responseKey={`Gmail_Inbox-${selectedGmailAccount}-${externalUserId}-getSyncStatus`}
                         loading={loading}
                         responses={responses}
                     >
                         <div className="mb-4">
-                            <p className="text-sm text-gray-600">Shows sync progress and last sync time</p>
+                            <p className="text-sm text-gray-600">Shows sync state and last history ID</p>
                         </div>
                     </ServiceCard>
 
@@ -374,9 +382,16 @@ export default function RestateDev() {
                                 alert('Please select a Calendar account');
                                 return;
                             }
-                            callVirtualObject('calendarSync', selectedCalendarAccount, 'startSync', { externalUserId });
+                            const voKey = `${selectedCalendarAccount}-${externalUserId}`;
+                            callVirtualObject('Google_Calendar', voKey, 'sync', { 
+                                accountId: selectedCalendarAccount,
+                                externalUserId,
+                                forceFullSync: false,
+                                syncMonthsBack: 3,
+                                syncMonthsForward: 3
+                            });
                         }}
-                        responseKey={`calendarSync-${selectedCalendarAccount}-startSync`}
+                        responseKey={`Google_Calendar-${selectedCalendarAccount}-${externalUserId}-sync`}
                         loading={loading}
                         responses={responses}
                     >
@@ -384,6 +399,7 @@ export default function RestateDev() {
                             <p className="text-sm text-gray-600">
                                 Account: <code className="bg-gray-100 px-2 py-1 rounded">{selectedCalendarAccount || 'Not selected'}</code>
                             </p>
+                            <p className="text-xs text-gray-500 mt-1">Syncs 3 months back and forward</p>
                         </div>
                     </ServiceCard>
 
@@ -395,14 +411,15 @@ export default function RestateDev() {
                                 alert('Please select a Calendar account');
                                 return;
                             }
-                            callVirtualObject('calendarSync', selectedCalendarAccount, 'getSyncStatus');
+                            const voKey = `${selectedCalendarAccount}-${externalUserId}`;
+                            callVirtualObject('Google_Calendar', voKey, 'getSyncStatus');
                         }}
-                        responseKey={`calendarSync-${selectedCalendarAccount}-getSyncStatus`}
+                        responseKey={`Google_Calendar-${selectedCalendarAccount}-${externalUserId}-getSyncStatus`}
                         loading={loading}
                         responses={responses}
                     >
                         <div className="mb-4">
-                            <p className="text-sm text-gray-600">Shows event count and primary calendar</p>
+                            <p className="text-sm text-gray-600">Shows primary calendar and event count</p>
                         </div>
                     </ServiceCard>
 
@@ -414,9 +431,14 @@ export default function RestateDev() {
                                 alert('Please select a Contacts account');
                                 return;
                             }
-                            callVirtualObject('contactsSync', selectedContactsAccount, 'startSync', { externalUserId });
+                            const voKey = `${selectedContactsAccount}-${externalUserId}`;
+                            callVirtualObject('Google_Contacts', voKey, 'sync', { 
+                                accountId: selectedContactsAccount,
+                                externalUserId,
+                                forceFullSync: false
+                            });
                         }}
-                        responseKey={`contactsSync-${selectedContactsAccount}-startSync`}
+                        responseKey={`Google_Contacts-${selectedContactsAccount}-${externalUserId}-sync`}
                         loading={loading}
                         responses={responses}
                     >
@@ -428,6 +450,39 @@ export default function RestateDev() {
                     </ServiceCard>
 
                     <ServiceCard
+                        title="Search Contacts"
+                        description="Search synced contacts"
+                        onCall={() => {
+                            if (!selectedContactsAccount) {
+                                alert('Please select a Contacts account');
+                                return;
+                            }
+                            const voKey = `${selectedContactsAccount}-${externalUserId}`;
+                            callVirtualObject('Google_Contacts', voKey, 'searchContacts', { 
+                                query: contactSearchQuery,
+                                accountId: selectedContactsAccount
+                            });
+                        }}
+                        responseKey={`Google_Contacts-${selectedContactsAccount}-${externalUserId}-searchContacts`}
+                        loading={loading}
+                        responses={responses}
+                    >
+                        <div className="mb-4">
+                            <label htmlFor="contactSearch" className="block text-sm font-medium text-gray-700 mb-2">
+                                Search Query:
+                            </label>
+                            <input
+                                id="contactSearch"
+                                type="text"
+                                value={contactSearchQuery}
+                                onChange={(e) => setContactSearchQuery(e.target.value)}
+                                placeholder="Search by name, email, or organization..."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+                    </ServiceCard>
+
+                    <ServiceCard
                         title="Contacts Sync Status"
                         description="Get contacts sync status"
                         onCall={() => {
@@ -435,14 +490,37 @@ export default function RestateDev() {
                                 alert('Please select a Contacts account');
                                 return;
                             }
-                            callVirtualObject('contactsSync', selectedContactsAccount, 'getSyncStatus');
+                            const voKey = `${selectedContactsAccount}-${externalUserId}`;
+                            callVirtualObject('Google_Contacts', voKey, 'getSyncStatus');
                         }}
-                        responseKey={`contactsSync-${selectedContactsAccount}-getSyncStatus`}
+                        responseKey={`Google_Contacts-${selectedContactsAccount}-${externalUserId}-getSyncStatus`}
                         loading={loading}
                         responses={responses}
                     >
                         <div className="mb-4">
                             <p className="text-sm text-gray-600">Shows total contacts synced</p>
+                        </div>
+                    </ServiceCard>
+
+                    <ServiceCard
+                        title="Reset Gmail Sync"
+                        description="Clear sync state for fresh sync"
+                        onCall={() => {
+                            if (!selectedGmailAccount) {
+                                alert('Please select a Gmail account');
+                                return;
+                            }
+                            const voKey = `${selectedGmailAccount}-${externalUserId}`;
+                            if (confirm('Are you sure you want to reset Gmail sync state?')) {
+                                callVirtualObject('Gmail_Inbox', voKey, 'reset');
+                            }
+                        }}
+                        responseKey={`Gmail_Inbox-${selectedGmailAccount}-${externalUserId}-reset`}
+                        loading={loading}
+                        responses={responses}
+                    >
+                        <div className="mb-4">
+                            <p className="text-sm text-red-600">⚠️ This will force a full sync next time</p>
                         </div>
                     </ServiceCard>
                 </div>
@@ -469,15 +547,15 @@ export default function RestateDev() {
                         <div className="space-y-2">
                             <div className="flex items-center gap-2">
                                 <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-                                <code className="text-sm bg-white px-2 py-1 rounded border">inboxSync/{accountId}</code>
+                                <code className="text-sm bg-white px-2 py-1 rounded border">Gmail_Inbox/{selectedGmailAccount}-{externalUserId}</code>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
-                                <code className="text-sm bg-white px-2 py-1 rounded border">calendarSync/{accountId}</code>
+                                <code className="text-sm bg-white px-2 py-1 rounded border">Google_Calendar/{selectedCalendarAccount}-{externalUserId}</code>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
-                                <code className="text-sm bg-white px-2 py-1 rounded border">contactsSync/{accountId}</code>
+                                <code className="text-sm bg-white px-2 py-1 rounded border">Google_Contacts/{selectedContactsAccount}-{externalUserId}</code>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="w-2 h-2 bg-red-400 rounded-full"></span>
@@ -488,8 +566,8 @@ export default function RestateDev() {
                     </div>
                 </div>
                 <div className="mt-4 text-sm text-gray-600">
-                    <p className="mb-2"><strong>Note:</strong> Virtual objects use the account ID as their key, allowing per-account state management.</p>
-                    <p>The rate limiter ensures API calls respect Google's quotas across all services.</p>
+                    <p className="mb-2"><strong>Note:</strong> Virtual objects use <code>accountId-externalUserId</code> as their key, ensuring per-account-per-user isolation.</p>
+                    <p>The sync handlers are idempotent - calling sync multiple times while syncing returns the current state.</p>
                 </div>
             </div>
 
@@ -497,4 +575,4 @@ export default function RestateDev() {
             <SyncHistory userId={externalUserId} limit={10} />
         </div>
     );
-} 
+}

@@ -117,9 +117,9 @@ export const googleCalendarObject = restate.object({
       syncMonthsBack?: number;
       syncMonthsForward?: number;
     }) => {
-      const { 
-        accountId, 
-        externalUserId, 
+      const {
+        accountId,
+        externalUserId,
         forceFullSync,
         syncMonthsBack = 3,
         syncMonthsForward = 3
@@ -127,18 +127,12 @@ export const googleCalendarObject = restate.object({
       const userId = ctx.key;
 
       // Get stored sync state
-      const lastSyncedAt = await ctx.get<number>("lastSyncedAt");
       const isSyncing = await ctx.get<boolean>("isSyncing");
-      const primaryCalendarId = await ctx.get<string>("primaryCalendarId");
 
       // Check if already syncing
+      // For now, we don't return, since this isn't that reliable yet :)
       if (isSyncing) {
-        console.log("[GoogleCalendar] Sync already in progress, returning current state");
-        return {
-          status: "already_syncing",
-          lastSyncedAt,
-          primaryCalendarId
-        };
+        console.log("\n\n[GoogleCalendar] Sync already in progress, returning current state");
       }
 
       // Mark as syncing
@@ -149,14 +143,12 @@ export const googleCalendarObject = restate.object({
         let totalEventsProcessed = 0;
 
         // Get list of calendars
-        const calendars = await ctx.run("fetch-calendars", async () => {
-          return await ctx.serviceClient(apiService).fetch({
-            accountId,
-            externalUserId,
-            url: "https://www.googleapis.com/calendar/v3/users/me/calendarList",
-            rateLimiterKey: "google-calendar-api",
-            tokensNeeded: 1
-          });
+        const calendars = await ctx.serviceClient(apiService).fetch({
+          accountId,
+          externalUserId,
+          url: "https://www.googleapis.com/calendar/v3/users/me/calendarList",
+          rateLimiterKey: "google-calendar-api",
+          tokensNeeded: 1
         });
 
         if (!calendars.items || calendars.items.length === 0) {
@@ -183,9 +175,7 @@ export const googleCalendarObject = restate.object({
 
         // If force full sync, clear existing events first
         if (forceFullSync) {
-          await ctx.run("clear-existing-events", async () => {
-            await deleteEventsFromCalendar(primaryCalendar.id, accountId);
-          });
+          await deleteEventsFromCalendar(primaryCalendar.id, accountId);
         }
 
         // Sync events from primary calendar
@@ -193,27 +183,23 @@ export const googleCalendarObject = restate.object({
         let pageCount = 0;
 
         do {
-          const eventsResponse = await ctx.run(`fetch-events-page-${pageCount}`, async () => {
-            return await fetchCalendarEvents(
-              ctx,
-              accountId,
-              externalUserId,
-              primaryCalendar.id,
-              timeMin.toISOString(),
-              timeMax.toISOString(),
-              pageToken
-            );
-          });
+          const eventsResponse = await fetchCalendarEvents(
+            ctx,
+            accountId,
+            externalUserId,
+            primaryCalendar.id,
+            timeMin.toISOString(),
+            timeMax.toISOString(),
+            pageToken
+          );
 
           if (eventsResponse.items && eventsResponse.items.length > 0) {
-            await ctx.run(`store-events-page-${pageCount}`, async () => {
-              await storeEvents(
-                eventsResponse.items,
-                primaryCalendar.id,
-                accountId,
-                userId
-              );
-            });
+            await storeEvents(
+              eventsResponse.items,
+              primaryCalendar.id,
+              accountId,
+              userId
+            );
 
             totalEventsProcessed += eventsResponse.items.length;
           }

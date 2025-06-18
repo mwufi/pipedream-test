@@ -105,11 +105,11 @@ export const googleContactsObject = restate.object({
 
       // Check if already syncing
       if (isSyncing) {
-        console.log("[GoogleContacts] Sync already in progress, returning current state");
-        return {
-          status: "already_syncing",
-          lastSyncedAt
-        };
+        console.log("\n\n[GoogleContacts] Sync already in progress, returning current state");
+        // return {
+        //   status: "already_syncing",
+        //   lastSyncedAt
+        // };
       }
 
       // Mark as syncing
@@ -122,15 +122,11 @@ export const googleContactsObject = restate.object({
 
         // If force full sync, clear existing contacts first
         if (forceFullSync) {
-          await ctx.run("clear-existing-contacts", async () => {
-            await clearAllContacts(accountId);
-          });
+          await clearAllContacts(accountId);
         }
 
         // Fetch first page to get total count
-        const firstPage = await ctx.run("fetch-first-page", async () => {
-          return await fetchContactsPage(ctx, accountId, externalUserId);
-        });
+        const firstPage = await fetchContactsPage(ctx, accountId, externalUserId);
 
         const totalContacts = firstPage.totalPeople || 0;
         ctx.set("totalContactsEstimate", totalContacts);
@@ -145,9 +141,7 @@ export const googleContactsObject = restate.object({
         let pageCount = 1;
 
         while (pageToken) {
-          const response = await ctx.run(`fetch-page-${pageCount}`, async () => {
-            return await fetchContactsPage(ctx, accountId, externalUserId, pageToken);
-          });
+          const response = await fetchContactsPage(ctx, accountId, externalUserId, pageToken);
 
           if (response.connections && response.connections.length > 0) {
             allContacts.push(...response.connections);
@@ -162,9 +156,7 @@ export const googleContactsObject = restate.object({
         for (let i = 0; i < allContacts.length; i += batchSize) {
           const batch = allContacts.slice(i, i + batchSize);
 
-          await ctx.run(`store-batch-${i}`, async () => {
-            await storeContacts(batch, accountId, userId);
-          });
+          await storeContacts(batch, accountId, userId);
 
           totalProcessed += batch.length;
         }
@@ -183,6 +175,7 @@ export const googleContactsObject = restate.object({
 
       } catch (error) {
         // Clear syncing flag on error
+        console.error(JSON.stringify(error, null, 2));
         ctx.clear("isSyncing");
         throw error;
       }
@@ -214,27 +207,25 @@ export const googleContactsObject = restate.object({
         const { query, accountId } = req;
 
         // Search in InstantDB
-        const result = await ctx.run("search-contacts", async () => {
-          return await adminDb.query({
-            contacts: {
-              $: {
-                where: {
-                  and: [
-                    { accountId: accountId },
-                    { userId: ctx.key },
-                    {
-                      or: [
-                        { name: { $like: `%${query}%` } },
-                        { email: { $like: `%${query}%` } },
-                        { organization: { $like: `%${query}%` } }
-                      ]
-                    }
-                  ]
-                },
+        const result = await adminDb.query({
+          contacts: {
+            $: {
+              where: {
+                and: [
+                  { accountId: accountId },
+                  { userId: ctx.key },
+                  {
+                    or: [
+                      { name: { $like: `%${query}%` } },
+                      { email: { $like: `%${query}%` } },
+                      { organization: { $like: `%${query}%` } }
+                    ]
+                  }
+                ],
                 limit: 20
               }
             }
-          });
+          }
         });
 
         return {

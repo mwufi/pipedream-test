@@ -183,9 +183,9 @@ function advance(lim: LimiterStateInner, date: number): number {
 async function getState(ctx: ObjectContext<LimiterState>): Promise<LimiterStateInner> {
     return (
         (await ctx.get("state")) ?? {
-            limit: 0,
-            burst: 0,
-            tokens: 0,
+            limit: 100,
+            burst: 100,
+            tokens: 100,
             last: 0,
             lastEvent: 0,
         }

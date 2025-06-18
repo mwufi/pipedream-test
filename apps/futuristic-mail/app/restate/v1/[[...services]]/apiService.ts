@@ -26,18 +26,18 @@ export const apiService = restate.service({
       // Apply rate limiting if configured
       if (req.rateLimiterKey) {
         const limiter = Limiter.fromContext(ctx, req.rateLimiterKey);
-        await limiter.wait(req.tokensNeeded || 1);
+        console.log(`[${req.rateLimiterKey}] Waiting for ${req.tokensNeeded} tokens`);
+        await limiter.wait(req.tokensNeeded || 1, 500);
+        console.log(`[${req.rateLimiterKey}] Waited for ${req.tokensNeeded} tokens`);
       }
-      
+
       // Make the API call with Restate's retry mechanism
-      return await ctx.run("api-call", async () => {
-        return syncClient.makeProxyRequest({
-          accountId: req.accountId,
-          externalUserId: req.externalUserId,
-          targetUrl: req.url,
-          options: req.options || {}
-        }, { maxRetries: 0 }); // Let Restate handle retries
-      });
+      return syncClient.makeProxyRequest({
+        accountId: req.accountId,
+        externalUserId: req.externalUserId,
+        targetUrl: req.url,
+        options: req.options || {}
+      }, { maxRetries: 1 }); // Let Restate handle retries
     }
   }
 });
