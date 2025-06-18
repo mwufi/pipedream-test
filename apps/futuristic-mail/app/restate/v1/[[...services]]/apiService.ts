@@ -17,8 +17,6 @@ export function fetchWithPipedreamProxy(input: {
   externalUserId: string,
   url: string,
   options?: any,
-  rateLimiterKey?: string,
-  tokensNeeded?: number
 }) {
   try {
     return syncClient.makeProxyRequest({

@@ -2,8 +2,6 @@ import * as restate from "@restatedev/restate-sdk/fetch";
 import helloService from "./helloService";
 import enrichService from "./enrichService";
 import { gmailInboxObject } from "./syncing/inboxService";
-import { googleCalendarObject } from "./syncing/calendarService";
-import { googleContactsObject } from "./syncing/contactsService";
 import { apiService } from "./apiService";
 import { limiter } from "./ratelimit/limiter";
 
@@ -12,8 +10,6 @@ const services = restate
   .bind(helloService)
   .bind(enrichService)
   .bind(gmailInboxObject)
-  .bind(googleCalendarObject)
-  .bind(googleContactsObject)
   .bind(apiService)
   .bind(limiter)
   .handler();

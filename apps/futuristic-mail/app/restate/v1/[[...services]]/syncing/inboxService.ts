@@ -2,6 +2,7 @@ import * as restate from "@restatedev/restate-sdk";
 import adminDb from "@/lib/instant_serverside_db";
 import { id } from "@instantdb/admin";
 import { fetchWithPipedreamProxy } from "../apiService";
+import { Limiter } from "../ratelimit/limiter_client";
 
 interface GmailMessage {
   id: string;
@@ -25,7 +26,6 @@ interface GmailHistory {
 
 // Helper function to fetch a single message
 async function fetchMessage(
-  ctx: restate.ObjectContext,
   accountId: string,
   externalUserId: string,
   messageId: string
@@ -34,18 +34,38 @@ async function fetchMessage(
     accountId,
     externalUserId,
     url: `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
-    rateLimiterKey: "gmail-api",
-    tokensNeeded: 1
   });
 }
 
 // Helper function to process and store messages
-async function storeMessages(
-  messages: GmailMessage[],
+async function saveMessageToDb(
+  msg: GmailMessage,
   accountId: string,
   userId: string
 ): Promise<void> {
-  const emailRecords = messages.map((msg) => ({
+
+  // Check if message already exists
+  const existingMessage = await adminDb.query({
+    emails: {
+      $: {
+        where: {
+          and: [
+            { accountId: accountId },
+            { messageId: msg.id }
+          ]
+        }
+      }
+    }
+  });
+
+  // Skip if message already exists
+  if (existingMessage.emails && existingMessage.emails.length > 0) {
+    console.log(`Message ${msg.id} already exists, skipping`);
+    return;
+  }
+
+  // Otherwise we make a new one!
+  const email = {
     id: id(),
     messageId: msg.id,
     threadId: msg.threadId,
@@ -59,13 +79,12 @@ async function storeMessages(
     historyId: msg.historyId || '',
     internalDate: msg.internalDate || '',
     syncedAt: Date.now()
-  }));
+  };
 
-  await adminDb.transact(
-    emailRecords.map(email =>
-      adminDb.tx.emails[email.id].update(email)
-    )
-  );
+  // save to db
+  await adminDb.transact([
+    adminDb.tx.emails[email.id].update(email)
+  ]);
 }
 
 // Helper function to delete messages from database
@@ -102,207 +121,70 @@ export const gmailInboxObject = restate.object({
     sync: async (ctx: restate.ObjectContext, req: {
       accountId: string;
       externalUserId: string;
-      forceFullSync?: boolean;
     }) => {
-      const { accountId, externalUserId, forceFullSync } = req;
-      const userId = ctx.key;
+      const { accountId, externalUserId } = req;
 
-      // Get stored sync state
-      const lastHistoryId = await ctx.get<string>("lastHistoryId");
-      const isSyncing = await ctx.get<boolean>("isSyncing");
+      // Get the current history ID first
+      const profile = await fetchWithPipedreamProxy({
+        accountId,
+        externalUserId,
+        url: "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+      });
 
-      // Check if already syncing
-      if (isSyncing) {
-        console.log("\n\n[GmailInbox] Sync already in progress, returning current state");
-        // return {
-        //   status: "already_syncing",
-        //   lastSyncedAt,
-        //   lastHistoryId
-        // };
-      }
+      const currentHistoryId = profile.historyId;
+      let messagesProcessed = 0;
 
-      // Mark as syncing
-      ctx.set("isSyncing", true);
-      const syncStartTime = await ctx.date.now();
+      // Fetch all messages
+      let pageToken: string | undefined;
+      do {
+        const limiter = Limiter.fromContext(ctx, "gmail-api");
+        await limiter.wait(5);
 
-      try {
-        let currentHistoryId = lastHistoryId;
-        let messagesProcessed = 0;
+        const messageList = await fetchWithPipedreamProxy({
+          accountId,
+          externalUserId,
+          url: `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100${pageToken ? `&pageToken=${pageToken}` : ''}`,
+        });
 
-        // Determine if we need a full sync
-        const needsFullSync = !lastHistoryId || forceFullSync;
+        if (!messageList.messages || messageList.messages.length === 0) break;
 
-        if (needsFullSync) {
-          console.log("Performing full sync");
+        // Process messages in batches
+        const batchSize = 10;
+        for (let i = 0; i < messageList.messages.length; i += batchSize) {
+          const batch = messageList.messages.slice(i, i + batchSize);
 
-          // Get the current history ID first
-          const profile = await fetchWithPipedreamProxy({
-            accountId,
-            externalUserId,
-            url: "https://gmail.googleapis.com/gmail/v1/users/me/profile",
-            rateLimiterKey: "gmail-api",
-            tokensNeeded: 1
-          });
-
-          currentHistoryId = profile.historyId;
-
-          // Fetch all messages
-          let pageToken: string | undefined;
-          do {
-            const messageList = await fetchWithPipedreamProxy({
-              accountId,
-              externalUserId,
-              url: `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100${pageToken ? `&pageToken=${pageToken}` : ''}`,
-              rateLimiterKey: "gmail-api",
-              tokensNeeded: 5
-            });
-
-            if (!messageList.messages || messageList.messages.length === 0) break;
-
-            // Process messages in batches
-            const batchSize = 10;
-            for (let i = 0; i < messageList.messages.length; i += batchSize) {
-              const batch = messageList.messages.slice(i, i + batchSize);
-
-              const messages = await Promise.all(
-                batch.map((msg: { id: string }) =>
-                  fetchMessage(ctx, accountId, externalUserId, msg.id)
-                )
-              );
-
-              await storeMessages(messages, accountId, userId);
-
-              messagesProcessed += messages.length;
-            }
-
-            pageToken = messageList.nextPageToken;
-          } while (pageToken);
-
-        } else {
-          console.log(`Performing incremental sync from history ID: ${lastHistoryId}`);
-
-          // Fetch history changes
-          let pageToken: string | undefined;
-          const messagesToFetch = new Set<string>();
-          const messagesToDelete = new Set<string>();
-
-          do {
-            const historyList = await fetchWithPipedreamProxy({
-              accountId,
-              externalUserId,
-              url: `https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=${lastHistoryId}&maxResults=100${pageToken ? `&pageToken=${pageToken}` : ''}`,
-              rateLimiterKey: "gmail-api",
-              tokensNeeded: 5
-            });
-
-            if (!historyList.history || historyList.history.length === 0) {
-              currentHistoryId = historyList.historyId || lastHistoryId;
-              break;
-            }
-
-            // Process history records
-            for (const record of historyList.history) {
-              const history = record as GmailHistory;
-
-              // Handle messages added
-              if (history.messagesAdded) {
-                history.messagesAdded.forEach(item => {
-                  messagesToFetch.add(item.message.id);
-                  messagesToDelete.delete(item.message.id);
-                });
-              }
-
-              // Handle messages deleted
-              if (history.messagesDeleted) {
-                history.messagesDeleted.forEach(item => {
-                  messagesToDelete.add(item.message.id);
-                  messagesToFetch.delete(item.message.id);
-                });
-              }
-
-              // Handle modified messages (labels added/removed)
-              if (history.labelsAdded || history.labelsRemoved) {
-                const modifiedIds = [
-                  ...(history.labelsAdded || []).map(item => item.message.id),
-                  ...(history.labelsRemoved || []).map(item => item.message.id)
-                ];
-                modifiedIds.forEach(id => messagesToFetch.add(id));
-              }
-            }
-
-            currentHistoryId = historyList.historyId;
-            pageToken = historyList.nextPageToken;
-          } while (pageToken);
-
-          // Delete removed messages
-          if (messagesToDelete.size > 0) {
-            await deleteMessages(Array.from(messagesToDelete), accountId);
-          }
-
-          // Fetch and store new/modified messages
-          if (messagesToFetch.size > 0) {
-            const messageIds = Array.from(messagesToFetch);
-            const batchSize = 10;
-
-            for (let i = 0; i < messageIds.length; i += batchSize) {
-              const batch = messageIds.slice(i, i + batchSize);
-
-              const messages = await Promise.all(
-                batch.map(messageId =>
-                  fetchMessage(ctx, accountId, externalUserId, messageId)
-                )
-              );
-
-              await storeMessages(messages, accountId, userId);
-
-              messagesProcessed += messages.length;
-            }
-          }
+          // Call processMail for each message in the batch
+          await Promise.all(
+            batch.map((msg: { id: string }) =>
+              ctx.serviceClient(gmailProcessor).processMail(msg.id)
+            )
+          );
         }
 
-        // Update sync state
-        ctx.set("lastHistoryId", currentHistoryId);
-        ctx.set("lastSyncedAt", syncStartTime);
-        ctx.clear("isSyncing");
+        pageToken = messageList.nextPageToken;
+      } while (pageToken);
 
-        return {
-          status: "completed",
-          messagesProcessed,
-          lastHistoryId: currentHistoryId,
-          lastSyncedAt: syncStartTime,
-          syncType: needsFullSync ? "full" : "incremental"
-        };
+      console.log(`Processed ${messagesProcessed} messages`);
 
-      } catch (error) {
-        // Clear syncing flag on error
-        ctx.clear("isSyncing");
-        throw error;
-      }
-    },
-
-    getSyncStatus: restate.handlers.object.shared(
-      async (ctx: restate.ObjectSharedContext) => {
-        const lastHistoryId = await ctx.get<string>("lastHistoryId");
-        const lastSyncedAt = await ctx.get<number>("lastSyncedAt");
-        const isSyncing = await ctx.get<boolean>("isSyncing");
-
-        return {
-          userId: ctx.key,
-          isSyncing: !!isSyncing,
-          lastHistoryId,
-          lastSyncedAt,
-          hasSyncedBefore: !!lastHistoryId
-        };
-      }
-    ),
-
-    reset: async (ctx: restate.ObjectContext) => {
-      // Clear all state for fresh sync
-      ctx.clear("lastHistoryId");
-      ctx.clear("lastSyncedAt");
-      ctx.clear("isSyncing");
-
-      return { status: "reset" };
+      return { status: "success" };
     }
   },
+});
+
+export const gmailProcessor = restate.service({
+  name: "gmail-processor",
+  handlers: {
+    processMail: async (ctx: restate.Context, req: {
+      accountId: string;
+      externalUserId: string;
+      messageId: string;
+    }) => {
+      const limiter = Limiter.fromContext(ctx, "gmail-api");
+      await limiter.wait();
+
+      const { accountId, externalUserId, messageId } = req;
+      const message = await fetchMessage(accountId, externalUserId, messageId)
+      await saveMessageToDb(message, accountId, externalUserId);
+    }
+  }
 });
