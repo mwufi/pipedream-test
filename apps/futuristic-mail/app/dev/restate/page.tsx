@@ -67,6 +67,8 @@ export default function RestateDev() {
     const [responses, setResponses] = useState<Record<string, ServiceResponse>>({});
     const [loading, setLoading] = useState<Record<string, boolean>>({});
     const [greetMessage, setGreetMessage] = useState('');
+    const [accountId, setAccountId] = useState('');
+    const [externalUserId, setExternalUserId] = useState('test-user-123');
 
     const restateIngressUrl = process.env.NEXT_PUBLIC_RESTATE_INGRESS_URL || 'http://localhost:8080';
 
@@ -76,6 +78,48 @@ export default function RestateDev() {
 
         try {
             const url = `${restateIngressUrl}/${serviceName}/${handler}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: data ? JSON.stringify(data) : undefined,
+            });
+
+            const result = await response.text();
+            let parsedResult;
+            try {
+                parsedResult = JSON.parse(result);
+            } catch {
+                parsedResult = result;
+            }
+
+            setResponses(prev => ({
+                ...prev,
+                [key]: {
+                    result: parsedResult,
+                    status: response.status,
+                }
+            }));
+        } catch (error) {
+            setResponses(prev => ({
+                ...prev,
+                [key]: {
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                    status: 0,
+                }
+            }));
+        } finally {
+            setLoading(prev => ({ ...prev, [key]: false }));
+        }
+    };
+
+    const callVirtualObject = async (objectName: string, objectKey: string, handler: string, data?: any) => {
+        const key = `${objectName}-${objectKey}-${handler}`;
+        setLoading(prev => ({ ...prev, [key]: true }));
+
+        try {
+            const url = `${restateIngressUrl}/${objectName}/${objectKey}/${handler}`;
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -161,6 +205,70 @@ export default function RestateDev() {
                         />
                     </div>
                 </ServiceCard>
+
+                <ServiceCard
+                    title="Inbox Sync"
+                    description="Sync Gmail inbox messages using virtual object pattern"
+                    onCall={() => {
+                        if (!accountId) {
+                            alert('Please enter an Account ID');
+                            return;
+                        }
+                        callVirtualObject('inboxSync', accountId, 'syncInbox', { externalUserId });
+                    }}
+                    responseKey={`inboxSync-${accountId}-syncInbox`}
+                    loading={loading}
+                    responses={responses}
+                >
+                    <div className="mb-4 space-y-3">
+                        <div>
+                            <label htmlFor="accountId" className="block text-sm font-medium text-gray-700 mb-2">
+                                Account ID (required):
+                            </label>
+                            <input
+                                id="accountId"
+                                type="text"
+                                value={accountId}
+                                onChange={(e) => setAccountId(e.target.value)}
+                                placeholder="Enter Gmail account ID..."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Get this from the test-sync page</p>
+                        </div>
+                        <div>
+                            <label htmlFor="externalUserId" className="block text-sm font-medium text-gray-700 mb-2">
+                                External User ID:
+                            </label>
+                            <input
+                                id="externalUserId"
+                                type="text"
+                                value={externalUserId}
+                                onChange={(e) => setExternalUserId(e.target.value)}
+                                placeholder="Enter user ID..."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+                    </div>
+                </ServiceCard>
+
+                <ServiceCard
+                    title="Inbox Sync Status"
+                    description="Get the current sync status for an inbox"
+                    onCall={() => {
+                        if (!accountId) {
+                            alert('Please enter an Account ID');
+                            return;
+                        }
+                        callVirtualObject('inboxSync', accountId, 'getSyncStatus');
+                    }}
+                    responseKey={`inboxSync-${accountId}-getSyncStatus`}
+                    loading={loading}
+                    responses={responses}
+                >
+                    <div className="mb-4">
+                        <p className="text-sm text-gray-600">Uses the same Account ID as above</p>
+                    </div>
+                </ServiceCard>
             </div>
 
             <div className="mt-8 bg-gray-50 rounded-lg p-6">
@@ -175,6 +283,16 @@ export default function RestateDev() {
                         <span className="w-2 h-2 bg-green-400 rounded-full"></span>
                         <code className="text-sm bg-white px-2 py-1 rounded border">hello/greet</code>
                         <span className="text-sm text-gray-600">- Returns personalized greeting</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                        <code className="text-sm bg-white px-2 py-1 rounded border">inboxSync/{accountId}/syncInbox</code>
+                        <span className="text-sm text-gray-600">- Sync Gmail inbox (virtual object)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                        <code className="text-sm bg-white px-2 py-1 rounded border">inboxSync/{accountId}/getSyncStatus</code>
+                        <span className="text-sm text-gray-600">- Get sync status (virtual object)</span>
                     </div>
                 </div>
             </div>
