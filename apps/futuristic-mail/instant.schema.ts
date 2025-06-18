@@ -50,6 +50,68 @@ const _schema = i.schema({
       createdAt: i.number(),
       updatedAt: i.number(),
     }),
+    syncJobs: i.entity({
+      id: i.string().unique().indexed(),
+      accountId: i.string().indexed(),
+      userId: i.string().indexed(),
+      type: i.string().indexed(), // 'gmail' | 'calendar' | 'contacts'
+      status: i.string().indexed(), // 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+      workflowId: i.string(),
+      progress: i.json<{
+        current: number;
+        total: number;
+        currentStep: string;
+        percentComplete: number;
+      }>(),
+      startedAt: i.number(),
+      completedAt: i.number().optional(),
+      error: i.string().optional(),
+      stats: i.json<{
+        messagesProcessed?: number;
+        eventsProcessed?: number;
+        contactsProcessed?: number;
+        duration?: number;
+      }>().optional(),
+    }),
+    emails: i.entity({
+      id: i.string().unique().indexed(),
+      messageId: i.string().indexed(),
+      threadId: i.string().indexed(),
+      accountId: i.string().indexed(),
+      userId: i.string().indexed(),
+      subject: i.string(),
+      from: i.string(),
+      date: i.string(),
+      snippet: i.string().optional(),
+      labelIds: i.json<string[]>().optional(),
+      syncedAt: i.number(),
+    }),
+    events: i.entity({
+      id: i.string().unique().indexed(),
+      eventId: i.string().indexed(),
+      calendarId: i.string().indexed(),
+      accountId: i.string().indexed(),
+      userId: i.string().indexed(),
+      summary: i.string().optional(),
+      description: i.string().optional(),
+      start: i.string(),
+      end: i.string(),
+      attendees: i.json<Array<{email: string, responseStatus?: string}>>().optional(),
+      location: i.string().optional(),
+      syncedAt: i.number(),
+    }),
+    contacts: i.entity({
+      id: i.string().unique().indexed(),
+      contactId: i.string().indexed(),
+      accountId: i.string().indexed(),
+      userId: i.string().indexed(),
+      name: i.string().optional(),
+      email: i.string().optional().indexed(),
+      phone: i.string().optional(),
+      organization: i.string().optional(),
+      title: i.string().optional(),
+      syncedAt: i.number(),
+    }),
   },
   links: {
     todosAuthor: {
@@ -103,5 +165,9 @@ const schema: AppSchema = _schema;
 type Todo = InstaQLEntity<typeof schema, "todos">;
 type Enrichment = InstaQLEntity<typeof schema, "enrichments">;
 type Profile = InstaQLEntity<typeof schema, "profiles">;
-export type { AppSchema, Todo, Enrichment, Profile };
+type SyncJob = InstaQLEntity<typeof schema, "syncJobs">;
+type Email = InstaQLEntity<typeof schema, "emails">;
+type Event = InstaQLEntity<typeof schema, "events">;
+type Contact = InstaQLEntity<typeof schema, "contacts">;
+export type { AppSchema, Todo, Enrichment, Profile, SyncJob, Email, Event, Contact };
 export default schema;

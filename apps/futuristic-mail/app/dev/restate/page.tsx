@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { SyncProgress, SyncHistory } from '@/components/SyncProgress';
+import clientDb from '@/lib/instant_clientside_db';
 
 interface ServiceResponse {
     result?: any;
@@ -315,6 +317,11 @@ export default function RestateDev() {
                 </button>
             </div>
 
+            {/* Live Sync Progress */}
+            <div className="mt-8">
+                <SyncProgress userId={externalUserId} />
+            </div>
+
             {/* Sync Services Section */}
             <div className="mt-8">
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">Sync Services</h2>
@@ -327,9 +334,9 @@ export default function RestateDev() {
                                 alert('Please select a Gmail account');
                                 return;
                             }
-                            callVirtualObject('inboxSync', selectedGmailAccount, 'syncInbox', { externalUserId });
+                            callVirtualObject('inboxSync', selectedGmailAccount, 'startSync', { externalUserId });
                         }}
-                        responseKey={`inboxSync-${selectedGmailAccount}-syncInbox`}
+                        responseKey={`inboxSync-${selectedGmailAccount}-startSync`}
                         loading={loading}
                         responses={responses}
                     >
@@ -367,9 +374,9 @@ export default function RestateDev() {
                                 alert('Please select a Calendar account');
                                 return;
                             }
-                            callVirtualObject('calendarSync', selectedCalendarAccount, 'syncCalendar', { externalUserId });
+                            callVirtualObject('calendarSync', selectedCalendarAccount, 'startSync', { externalUserId });
                         }}
-                        responseKey={`calendarSync-${selectedCalendarAccount}-syncCalendar`}
+                        responseKey={`calendarSync-${selectedCalendarAccount}-startSync`}
                         loading={loading}
                         responses={responses}
                     >
@@ -407,9 +414,9 @@ export default function RestateDev() {
                                 alert('Please select a Contacts account');
                                 return;
                             }
-                            callVirtualObject('contactsSync', selectedContactsAccount, 'syncContacts', { externalUserId });
+                            callVirtualObject('contactsSync', selectedContactsAccount, 'startSync', { externalUserId });
                         }}
-                        responseKey={`contactsSync-${selectedContactsAccount}-syncContacts`}
+                        responseKey={`contactsSync-${selectedContactsAccount}-startSync`}
                         loading={loading}
                         responses={responses}
                     >
@@ -485,6 +492,9 @@ export default function RestateDev() {
                     <p>The rate limiter ensures API calls respect Google's quotas across all services.</p>
                 </div>
             </div>
+
+            {/* Sync History */}
+            <SyncHistory userId={externalUserId} limit={10} />
         </div>
     );
 } 

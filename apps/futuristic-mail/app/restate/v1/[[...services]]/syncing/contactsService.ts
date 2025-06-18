@@ -1,132 +1,128 @@
 import * as restate from "@restatedev/restate-sdk";
-import { apiService } from "../apiService";
-
-// Google Contacts rate limiter key - shared across all Contacts operations
-const CONTACTS_RATE_LIMITER = "google-contacts-api";
+import adminDb from "@/lib/instant_serverside_db";
+import { id } from "@instantdb/admin";
+import { contactsSyncWorkflow } from "../workflows/contactsSyncWorkflow";
 
 // Define the contacts sync virtual object
 export const contactsSyncObject = restate.object({
   name: "contactsSync",
   handlers: {
-    syncContacts: async (ctx: restate.ObjectContext, req: { externalUserId: string }) => {
+    startSync: async (ctx: restate.ObjectContext, req: { externalUserId: string }) => {
       const accountId = ctx.key;
       const { externalUserId } = req;
       
       console.log(`Starting contacts sync for account ${accountId}, user ${externalUserId}`);
       
-      // Get sync status to prevent concurrent syncs
-      const isSyncing = await ctx.get<boolean>("isSyncing");
-      if (isSyncing) {
+      // Check if already syncing
+      const activeWorkflowId = await ctx.get<string>("activeWorkflowId");
+      if (activeWorkflowId) {
         console.log("Sync already in progress, skipping");
-        return { status: "already_syncing", accountId };
+        return { status: "already_syncing", workflowId: activeWorkflowId };
       }
       
-      // Mark as syncing
-      ctx.set("isSyncing", true);
-      ctx.set("lastSyncStart", new Date(await ctx.date.now()).toISOString());
+      // Create sync job in InstantDB
+      const syncJobId = id();
+      const timestamp = Date.now();
       
-      try {
-        let syncedCount = 0;
-        let pageToken: string | undefined;
-        const allContacts: any[] = [];
-        
-        // Paginate through all contacts
-        do {
-          // List contacts using the API service with rate limiting
-          const response = await ctx.serviceClient(apiService).fetch({
+      await ctx.run("create-sync-job", async () => {
+        await adminDb.transact([
+          adminDb.tx.syncJobs[syncJobId].update({
+            id: syncJobId,
             accountId,
-            externalUserId,
-            url: "https://people.googleapis.com/v1/people/me/connections",
-            options: {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json"
-              }
-            },
-            rateLimiterKey: CONTACTS_RATE_LIMITER,
-            tokensNeeded: 1
-          });
-          
-          if (response.connections && response.connections.length > 0) {
-            allContacts.push(...response.connections);
-            
-            // Process each contact
-            for (const contact of response.connections) {
-              const names = contact.names || [];
-              const emails = contact.emailAddresses || [];
-              const phones = contact.phoneNumbers || [];
-              const organizations = contact.organizations || [];
-              
-              const primaryName = names.find(n => n.metadata?.primary) || names[0];
-              const primaryEmail = emails.find(e => e.metadata?.primary) || emails[0];
-              const primaryOrg = organizations.find(o => o.metadata?.primary) || organizations[0];
-              
-              console.log(`👤 Contact: ${primaryName?.displayName || 'No name'}`);
-              if (primaryEmail) {
-                console.log(`   Email: ${primaryEmail.value}`);
-              }
-              if (primaryOrg) {
-                console.log(`   Organization: ${primaryOrg.name || ''} ${primaryOrg.title ? `(${primaryOrg.title})` : ''}`);
-              }
-              if (phones.length > 0) {
-                console.log(`   Phone: ${phones[0].value}`);
-              }
-              console.log('---');
+            userId: externalUserId,
+            type: "contacts",
+            status: "pending",
+            workflowId: "",
+            startedAt: timestamp,
+            progress: {
+              current: 0,
+              total: 0,
+              currentStep: "Initializing",
+              percentComplete: 0
             }
-            
-            syncedCount += response.connections.length;
-          }
-          
-          pageToken = response.nextPageToken;
-          
-        } while (pageToken);
+          })
+        ]);
+      });
+      
+      // Start workflow
+      const workflowId = `contacts-sync-${accountId}-${timestamp}`;
+      await ctx.workflowSendClient(contactsSyncWorkflow, workflowId).run({
+        accountId,
+        externalUserId,
+        syncJobId
+      });
+      
+      // Update state
+      ctx.set("activeWorkflowId", workflowId);
+      ctx.set("activeSyncJobId", syncJobId);
+      ctx.set("lastSyncStart", await ctx.date.now());
+      
+      // Update sync job with workflow ID
+      await ctx.run("update-workflow-id", async () => {
+        await adminDb.transact([
+          adminDb.tx.syncJobs[syncJobId].update({
+            workflowId
+          })
+        ]);
+      });
+      
+      return { 
+        status: "started", 
+        workflowId,
+        syncJobId 
+      };
+    },
+    
+    cancelSync: async (ctx: restate.ObjectContext) => {
+      const workflowId = await ctx.get<string>("activeWorkflowId");
+      const syncJobId = await ctx.get<string>("activeSyncJobId");
+      
+      if (workflowId) {
+        // Cancel the workflow
+        await ctx.workflowSendClient(contactsSyncWorkflow, workflowId).cancel();
         
-        console.log(`Total contacts synced: ${syncedCount}`);
+        // Clear state
+        ctx.clear("activeWorkflowId");
+        ctx.clear("activeSyncJobId");
         
-        // Update sync metadata
-        ctx.set("lastSyncComplete", new Date(await ctx.date.now()).toISOString());
-        ctx.set("lastContactCount", syncedCount);
-        ctx.set("totalContactsInSystem", allContacts.length);
-        
-        return {
-          status: "success",
-          accountId,
-          contactsProcessed: syncedCount,
-          totalContacts: allContacts.length
-        };
-        
-      } catch (error) {
-        console.error("Contacts sync failed:", error);
-        ctx.set("lastSyncError", error instanceof Error ? error.message : 'Unknown error');
-        return {
-          status: "error",
-          accountId,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        };
-      } finally {
-        // Always clear the syncing flag
-        ctx.set("isSyncing", false);
+        return { status: "cancelled", workflowId };
       }
+      
+      return { status: "no_active_sync" };
+    },
+    
+    completeSync: async (ctx: restate.ObjectContext, req: { 
+      totalContacts: number, 
+      syncJobId: string 
+    }) => {
+      ctx.clear("activeWorkflowId");
+      ctx.clear("activeSyncJobId");
+      ctx.set("lastSyncComplete", await ctx.date.now());
+      ctx.set("lastContactCount", req.totalContacts);
+      ctx.set("totalContactsInSystem", req.totalContacts);
+      
+      return { status: "completed" };
     },
     
     getSyncStatus: restate.handlers.object.shared(
       async (ctx: restate.ObjectSharedContext) => {
         const accountId = ctx.key;
-        const isSyncing = await ctx.get<boolean>("isSyncing") ?? false;
-        const lastSyncStart = await ctx.get<string>("lastSyncStart");
-        const lastSyncComplete = await ctx.get<string>("lastSyncComplete");
+        const activeWorkflowId = await ctx.get<string>("activeWorkflowId");
+        const activeSyncJobId = await ctx.get<string>("activeSyncJobId");
+        const lastSyncStart = await ctx.get<number>("lastSyncStart");
+        const lastSyncComplete = await ctx.get<number>("lastSyncComplete");
         const lastContactCount = await ctx.get<number>("lastContactCount");
         const totalContactsInSystem = await ctx.get<number>("totalContactsInSystem");
-        const lastSyncError = await ctx.get<string>("lastSyncError");
         
         return {
           accountId,
-          isSyncing,
+          isActive: !!activeWorkflowId,
+          activeWorkflowId,
+          activeSyncJobId,
           lastSyncStart,
           lastSyncComplete,
           lastContactCount,
-          totalContactsInSystem,
-          lastSyncError
+          totalContactsInSystem
         };
       }
     ),

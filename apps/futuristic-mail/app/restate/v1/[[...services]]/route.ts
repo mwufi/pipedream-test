@@ -6,6 +6,9 @@ import { calendarSyncObject } from "./syncing/calendarService";
 import { contactsSyncObject } from "./syncing/contactsService";
 import { apiService } from "./apiService";
 import { limiter } from "./ratelimit/limiter";
+import { gmailSyncWorkflow } from "./workflows/gmailSyncWorkflow";
+import { calendarSyncWorkflow } from "./workflows/calendarSyncWorkflow";
+import { contactsSyncWorkflow } from "./workflows/contactsSyncWorkflow";
 
 const services = restate
   .endpoint()
@@ -16,6 +19,9 @@ const services = restate
   .bind(contactsSyncObject)
   .bind(apiService)
   .bind(limiter)
+  .bind(gmailSyncWorkflow)
+  .bind(calendarSyncWorkflow)
+  .bind(contactsSyncWorkflow)
   .handler();
 
 export function GET(request: Request) {

@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 
 interface RateLimiterState {
-    rate: number;
-    availableTokens: number;
-    lastRefillTime: string;
-    reservations?: Record<string, number>;
+    limit: number;
+    burst: number;
+    tokens: number;
+    last: number;
+    lastEvent: number;
 }
 
 interface RateLimiterKey {
@@ -65,13 +66,13 @@ export default function RateLimiterMonitor() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });
-            
+
             if (response.ok) {
                 const state = await response.json();
                 setStates(prev => ({ ...prev, [key]: state }));
-                // Initialize new rate input with current rate
-                if (state.rate) {
-                    setNewRates(prev => ({ ...prev, [key]: state.rate }));
+                // Initialize new rate input with current limit
+                if (state.limit) {
+                    setNewRates(prev => ({ ...prev, [key]: state.limit }));
                 }
             } else {
                 console.error(`Failed to fetch state for ${key}`);
@@ -98,9 +99,12 @@ export default function RateLimiterMonitor() {
             const response = await fetch(`${restateIngressUrl}/limiter/${key}/setRate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rate: newRate })
+                body: JSON.stringify({
+                    newLimit: newRate,
+                    newBurst: newRate  // Set burst equal to limit for simplicity
+                })
             });
-            
+
             if (response.ok) {
                 setSuccess(`Rate updated successfully for ${key}`);
                 // Refresh state
@@ -116,8 +120,8 @@ export default function RateLimiterMonitor() {
     };
 
     const getTokenPercentage = (state: RateLimiterState) => {
-        if (!state.rate || state.rate === 0) return 0;
-        return Math.round((state.availableTokens / state.rate) * 100);
+        if (!state.burst || state.burst === 0) return 0;
+        return Math.round((state.tokens / state.burst) * 100);
     };
 
     const getTokenColor = (percentage: number) => {
@@ -161,7 +165,7 @@ export default function RateLimiterMonitor() {
                                 <h3 className="text-lg font-semibold text-gray-800">{limiter.name}</h3>
                                 <span className={`w-3 h-3 rounded-full bg-${limiter.color}-400`}></span>
                             </div>
-                            
+
                             <p className="text-sm text-gray-600 mb-4">{limiter.description}</p>
 
                             {state ? (
@@ -170,10 +174,10 @@ export default function RateLimiterMonitor() {
                                     <div className="mb-4">
                                         <div className="flex justify-between text-sm mb-2">
                                             <span>Available Tokens</span>
-                                            <span className="font-medium">{state.availableTokens} / {state.rate}</span>
+                                            <span className="font-medium">{state.tokens} / {state.burst}</span>
                                         </div>
                                         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                                            <div 
+                                            <div
                                                 className={`h-full transition-all duration-300 bg-${tokenColor}-500`}
                                                 style={{ width: `${percentage}%` }}
                                             />
@@ -187,7 +191,7 @@ export default function RateLimiterMonitor() {
                                     <div className="mb-4 text-sm">
                                         <span className="text-gray-600">Last refill: </span>
                                         <span className="font-medium">
-                                            {new Date(state.lastRefillTime).toLocaleTimeString()}
+                                            {state.last > 0 ? new Date(state.last).toLocaleTimeString() : 'Never'}
                                         </span>
                                     </div>
 
@@ -200,7 +204,7 @@ export default function RateLimiterMonitor() {
                                             <div className="flex gap-2">
                                                 <input
                                                     type="number"
-                                                    value={newRates[limiter.key] || state.rate}
+                                                    value={newRates[limiter.key] || state.limit}
                                                     onChange={(e) => setNewRates(prev => ({
                                                         ...prev,
                                                         [limiter.key]: parseInt(e.target.value) || 0
@@ -211,7 +215,7 @@ export default function RateLimiterMonitor() {
                                                 />
                                                 <button
                                                     onClick={() => updateRate(limiter.key)}
-                                                    disabled={isLoading || newRates[limiter.key] === state.rate}
+                                                    disabled={isLoading || newRates[limiter.key] === state.limit}
                                                     className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-md font-medium transition-colors"
                                                 >
                                                     {isLoading ? 'Updating...' : 'Update'}
@@ -220,20 +224,11 @@ export default function RateLimiterMonitor() {
                                         </div>
                                     </div>
 
-                                    {/* Active Reservations */}
-                                    {state.reservations && Object.keys(state.reservations).length > 0 && (
-                                        <div className="mt-4 pt-4 border-t border-gray-200">
-                                            <p className="text-sm font-medium text-gray-700 mb-2">Active Reservations:</p>
-                                            <div className="space-y-1">
-                                                {Object.entries(state.reservations).map(([id, tokens]) => (
-                                                    <div key={id} className="flex justify-between text-xs">
-                                                        <span className="text-gray-600 truncate max-w-[150px]">{id}</span>
-                                                        <span className="font-medium">{tokens} tokens</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                    {/* Rate Info */}
+                                    <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-600">
+                                        <p>Rate: {state.limit} tokens/minute</p>
+                                        <p>Burst: {state.burst} tokens max</p>
+                                    </div>
                                 </>
                             ) : (
                                 <div className="py-8 text-center">
