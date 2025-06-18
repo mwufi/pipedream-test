@@ -1,147 +1,258 @@
 import * as restate from "@restatedev/restate-sdk";
 import adminDb from "@/lib/instant_serverside_db";
 import { id } from "@instantdb/admin";
-import { contactsSyncWorkflow } from "../workflows/contactsSyncWorkflow";
+import { apiService } from "../apiService";
 
-// Define the contacts sync virtual object
-export const contactsSyncObject = restate.object({
-  name: "contactsSync",
+interface Contact {
+  resourceName?: string;
+  etag?: string;
+  names?: Array<{ displayName?: string; familyName?: string; givenName?: string }>;
+  emailAddresses?: Array<{ value?: string; type?: string }>;
+  phoneNumbers?: Array<{ value?: string; type?: string }>;
+  organizations?: Array<{ name?: string; title?: string }>;
+}
+
+// Helper function to fetch contacts page
+async function fetchContactsPage(
+  ctx: restate.ObjectContext,
+  accountId: string,
+  externalUserId: string,
+  pageToken?: string,
+  pageSize: number = 100
+): Promise<{ connections?: Contact[]; nextPageToken?: string; totalPeople?: number }> {
+  let url = `https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers,organizations&pageSize=${pageSize}`;
+  if (pageToken) url += `&pageToken=${pageToken}`;
+
+  return await ctx.serviceClient(apiService).fetch({
+    accountId,
+    externalUserId,
+    url,
+    rateLimiterKey: "google-contacts-api",
+    tokensNeeded: 1
+  });
+}
+
+// Helper function to store contacts in database
+async function storeContacts(
+  contacts: Contact[],
+  accountId: string,
+  userId: string
+): Promise<void> {
+  const contactRecords = contacts.map((contact) => {
+    const primaryName = contact.names?.[0];
+    const primaryEmail = contact.emailAddresses?.find(e => e.type === 'primary') || contact.emailAddresses?.[0];
+    const primaryPhone = contact.phoneNumbers?.find(p => p.type === 'primary') || contact.phoneNumbers?.[0];
+    const primaryOrg = contact.organizations?.[0];
+
+    return {
+      id: id(),
+      contactId: contact.resourceName || '',
+      accountId,
+      userId,
+      name: primaryName?.displayName || `${primaryName?.givenName || ''} ${primaryName?.familyName || ''}`.trim() || 'Unknown',
+      email: primaryEmail?.value || '',
+      phone: primaryPhone?.value || '',
+      organization: primaryOrg?.name || '',
+      title: primaryOrg?.title || '',
+      etag: contact.etag || '',
+      syncedAt: Date.now()
+    };
+  });
+
+  await adminDb.transact(
+    contactRecords.map(contact =>
+      adminDb.tx.contacts[contact.id].update(contact)
+    )
+  );
+}
+
+// Helper function to clear all contacts for an account
+async function clearAllContacts(accountId: string): Promise<void> {
+  const result = await adminDb.query({
+    contacts: {
+      $: {
+        where: {
+          accountId: accountId
+        }
+      }
+    }
+  });
+
+  if (result.contacts && result.contacts.length > 0) {
+    await adminDb.transact(
+      result.contacts.map(contact =>
+        adminDb.tx.contacts[contact.id].delete()
+      )
+    );
+  }
+}
+
+// Define the Google Contacts virtual object
+export const googleContactsObject = restate.object({
+  name: "Google_Contacts",
   handlers: {
-    startSync: async (ctx: restate.ObjectContext, req: { externalUserId: string }) => {
-      const accountId = ctx.key;
-      const { externalUserId } = req;
-      
-      console.log(`Starting contacts sync for account ${accountId}, user ${externalUserId}`);
-      
-      // Check if already syncing
-      const activeWorkflowId = await ctx.get<string>("activeWorkflowId");
-      if (activeWorkflowId) {
-        console.log("Sync already in progress, skipping");
-        return { status: "already_syncing", workflowId: activeWorkflowId };
-      }
-      
-      // Create sync job in InstantDB
-      const syncJobId = id();
-      const timestamp = Date.now();
-      
-      await ctx.run("create-sync-job", async () => {
-        await adminDb.transact([
-          adminDb.tx.syncJobs[syncJobId].update({
-            id: syncJobId,
-            accountId,
-            userId: externalUserId,
-            type: "contacts",
-            status: "pending",
-            workflowId: "",
-            startedAt: timestamp,
-            progress: {
-              current: 0,
-              total: 0,
-              currentStep: "Initializing",
-              percentComplete: 0
-            }
-          })
-        ]);
-      });
-      
-      // Start workflow
-      const workflowId = `contacts-sync-${accountId}-${timestamp}`;
-      await ctx.workflowSendClient(contactsSyncWorkflow, workflowId).run({
-        accountId,
-        externalUserId,
-        syncJobId
-      });
-      
-      // Update state
-      ctx.set("activeWorkflowId", workflowId);
-      ctx.set("activeSyncJobId", syncJobId);
-      ctx.set("lastSyncStart", await ctx.date.now());
-      
-      // Update sync job with workflow ID
-      await ctx.run("update-workflow-id", async () => {
-        await adminDb.transact([
-          adminDb.tx.syncJobs[syncJobId].update({
-            workflowId
-          })
-        ]);
-      });
-      
-      return { 
-        status: "started", 
-        workflowId,
-        syncJobId 
-      };
-    },
-    
-    cancelSync: async (ctx: restate.ObjectContext) => {
-      const workflowId = await ctx.get<string>("activeWorkflowId");
-      const syncJobId = await ctx.get<string>("activeSyncJobId");
-      
-      if (workflowId) {
-        // Cancel the workflow
-        await ctx.workflowSendClient(contactsSyncWorkflow, workflowId).cancel();
-        
-        // Clear state
-        ctx.clear("activeWorkflowId");
-        ctx.clear("activeSyncJobId");
-        
-        return { status: "cancelled", workflowId };
-      }
-      
-      return { status: "no_active_sync" };
-    },
-    
-    completeSync: async (ctx: restate.ObjectContext, req: { 
-      totalContacts: number, 
-      syncJobId: string 
+    sync: async (ctx: restate.ObjectContext, req: {
+      accountId: string;
+      externalUserId: string;
+      forceFullSync?: boolean;
     }) => {
-      ctx.clear("activeWorkflowId");
-      ctx.clear("activeSyncJobId");
-      ctx.set("lastSyncComplete", await ctx.date.now());
-      ctx.set("lastContactCount", req.totalContacts);
-      ctx.set("totalContactsInSystem", req.totalContacts);
-      
-      return { status: "completed" };
+      const { accountId, externalUserId, forceFullSync } = req;
+      const userId = ctx.key;
+
+      // Get stored sync state
+      const lastSyncedAt = await ctx.get<number>("lastSyncedAt");
+      const isSyncing = await ctx.get<boolean>("isSyncing");
+
+      // Check if already syncing
+      if (isSyncing) {
+        console.log("[GoogleContacts] Sync already in progress, returning current state");
+        return {
+          status: "already_syncing",
+          lastSyncedAt
+        };
+      }
+
+      // Mark as syncing
+      ctx.set("isSyncing", true);
+      const syncStartTime = await ctx.date.now();
+
+      try {
+        let totalProcessed = 0;
+        const allContacts: Contact[] = [];
+
+        // If force full sync, clear existing contacts first
+        if (forceFullSync) {
+          await ctx.run("clear-existing-contacts", async () => {
+            await clearAllContacts(accountId);
+          });
+        }
+
+        // Fetch first page to get total count
+        const firstPage = await ctx.run("fetch-first-page", async () => {
+          return await fetchContactsPage(ctx, accountId, externalUserId);
+        });
+
+        const totalContacts = firstPage.totalPeople || 0;
+        ctx.set("totalContactsEstimate", totalContacts);
+
+        // Process first page
+        if (firstPage.connections && firstPage.connections.length > 0) {
+          allContacts.push(...firstPage.connections);
+        }
+
+        // Fetch remaining pages
+        let pageToken = firstPage.nextPageToken;
+        let pageCount = 1;
+
+        while (pageToken) {
+          const response = await ctx.run(`fetch-page-${pageCount}`, async () => {
+            return await fetchContactsPage(ctx, accountId, externalUserId, pageToken);
+          });
+
+          if (response.connections && response.connections.length > 0) {
+            allContacts.push(...response.connections);
+          }
+
+          pageToken = response.nextPageToken;
+          pageCount++;
+        }
+
+        // Process contacts in batches
+        const batchSize = 50;
+        for (let i = 0; i < allContacts.length; i += batchSize) {
+          const batch = allContacts.slice(i, i + batchSize);
+
+          await ctx.run(`store-batch-${i}`, async () => {
+            await storeContacts(batch, accountId, userId);
+          });
+
+          totalProcessed += batch.length;
+        }
+
+        // Update sync state
+        ctx.set("lastSyncedAt", syncStartTime);
+        ctx.set("totalContactsLastSync", totalProcessed);
+        ctx.clear("isSyncing");
+
+        return {
+          status: "completed",
+          totalContactsProcessed: totalProcessed,
+          lastSyncedAt: syncStartTime,
+          syncType: forceFullSync ? "full" : "incremental"
+        };
+
+      } catch (error) {
+        // Clear syncing flag on error
+        ctx.clear("isSyncing");
+        throw error;
+      }
     },
-    
+
     getSyncStatus: restate.handlers.object.shared(
       async (ctx: restate.ObjectSharedContext) => {
-        const accountId = ctx.key;
-        const activeWorkflowId = await ctx.get<string>("activeWorkflowId");
-        const activeSyncJobId = await ctx.get<string>("activeSyncJobId");
-        const lastSyncStart = await ctx.get<number>("lastSyncStart");
-        const lastSyncComplete = await ctx.get<number>("lastSyncComplete");
-        const lastContactCount = await ctx.get<number>("lastContactCount");
-        const totalContactsInSystem = await ctx.get<number>("totalContactsInSystem");
-        
+        const lastSyncedAt = await ctx.get<number>("lastSyncedAt");
+        const isSyncing = await ctx.get<boolean>("isSyncing");
+        const totalContactsLastSync = await ctx.get<number>("totalContactsLastSync");
+        const totalContactsEstimate = await ctx.get<number>("totalContactsEstimate");
+
         return {
-          accountId,
-          isActive: !!activeWorkflowId,
-          activeWorkflowId,
-          activeSyncJobId,
-          lastSyncStart,
-          lastSyncComplete,
-          lastContactCount,
-          totalContactsInSystem
+          userId: ctx.key,
+          isSyncing: !!isSyncing,
+          lastSyncedAt,
+          totalContactsLastSync,
+          totalContactsEstimate,
+          hasSyncedBefore: !!lastSyncedAt
         };
       }
     ),
-    
+
     searchContacts: restate.handlers.object.shared(
-      async (ctx: restate.ObjectSharedContext, req: { query: string }) => {
-        // This could be enhanced to maintain a local search index
-        // For now, it's a placeholder that could query stored contacts
-        const accountId = ctx.key;
-        console.log(`Searching contacts for "${req.query}" in account ${accountId}`);
-        
-        // In a real implementation, you'd search through stored contacts
+      async (ctx: restate.ObjectSharedContext, req: {
+        query: string;
+        accountId: string;
+      }) => {
+        const { query, accountId } = req;
+
+        // Search in InstantDB
+        const result = await ctx.run("search-contacts", async () => {
+          return await adminDb.query({
+            contacts: {
+              $: {
+                where: {
+                  and: [
+                    { accountId: accountId },
+                    { userId: ctx.key },
+                    {
+                      or: [
+                        { name: { $like: `%${query}%` } },
+                        { email: { $like: `%${query}%` } },
+                        { organization: { $like: `%${query}%` } }
+                      ]
+                    }
+                  ]
+                },
+                limit: 20
+              }
+            }
+          });
+        });
+
         return {
-          accountId,
-          query: req.query,
-          results: [],
-          message: "Search functionality not yet implemented"
+          query,
+          results: result.contacts || [],
+          count: result.contacts?.length || 0
         };
       }
     ),
+
+    reset: async (ctx: restate.ObjectContext) => {
+      // Clear all state for fresh sync
+      ctx.clear("lastSyncedAt");
+      ctx.clear("isSyncing");
+      ctx.clear("totalContactsLastSync");
+      ctx.clear("totalContactsEstimate");
+
+      return { status: "reset" };
+    }
   },
 });

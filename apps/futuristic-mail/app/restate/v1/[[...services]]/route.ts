@@ -2,24 +2,20 @@ import * as restate from "@restatedev/restate-sdk/fetch";
 import helloService from "./helloService";
 import enrichService from "./enrichService";
 import { gmailInboxObject } from "./syncing/inboxService";
-import { calendarSyncObject } from "./syncing/calendarService";
-import { contactsSyncObject } from "./syncing/contactsService";
+import { googleCalendarObject } from "./syncing/calendarService";
+import { googleContactsObject } from "./syncing/contactsService";
 import { apiService } from "./apiService";
 import { limiter } from "./ratelimit/limiter";
-import { calendarSyncWorkflow } from "./workflows/calendarSyncWorkflow";
-import { contactsSyncWorkflow } from "./workflows/contactsSyncWorkflow";
 
 const services = restate
   .endpoint()
   .bind(helloService)
   .bind(enrichService)
   .bind(gmailInboxObject)
-  .bind(calendarSyncObject)
-  .bind(contactsSyncObject)
+  .bind(googleCalendarObject)
+  .bind(googleContactsObject)
   .bind(apiService)
   .bind(limiter)
-  .bind(calendarSyncWorkflow)
-  .bind(contactsSyncWorkflow)
   .handler();
 
 export function GET(request: Request) {
