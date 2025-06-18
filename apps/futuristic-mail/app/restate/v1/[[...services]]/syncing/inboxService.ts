@@ -1,15 +1,8 @@
 import * as restate from "@restatedev/restate-sdk";
-import { createSyncClient, syncHelpers } from '@repo/sync-helpers';
+import { apiService } from "../apiService";
 
-// Initialize sync client
-const syncClient = createSyncClient({
-  pipedream: {
-    projectId: process.env.PIPEDREAM_PROJECT_ID || '',
-    clientId: process.env.PIPEDREAM_CLIENT_ID || '',
-    clientSecret: process.env.PIPEDREAM_CLIENT_SECRET || '',
-    environment: (process.env.PIPEDREAM_ENVIRONMENT as 'development' | 'production') || 'development'
-  }
-});
+// Gmail rate limiter key - shared across all Gmail operations
+const GMAIL_RATE_LIMITER = "gmail-api";
 
 // Define the inbox sync virtual object
 export const inboxSyncObject = restate.object({
@@ -30,16 +23,23 @@ export const inboxSyncObject = restate.object({
       
       // Mark as syncing
       ctx.set("isSyncing", true);
-      ctx.set("lastSyncStart", new Date().toISOString());
+      ctx.set("lastSyncStart", new Date(await ctx.date.now()).toISOString());
       
       try {
-        // Get Gmail messages
-        const messageList = await syncHelpers.gmail.listMessages(
-          syncClient,
+        // List messages using the API service with rate limiting
+        const messageList = await ctx.serviceClient(apiService).fetch({
           accountId,
           externalUserId,
-          { maxResults: 100 }
-        );
+          url: "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+          options: {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json"
+            }
+          },
+          rateLimiterKey: GMAIL_RATE_LIMITER,
+          tokensNeeded: 5 // List operations cost more quota
+        });
         
         if (!messageList.messages || messageList.messages.length === 0) {
           console.log("No messages found");
@@ -51,14 +51,20 @@ export const inboxSyncObject = restate.object({
         // Process each message
         for (const message of messageList.messages) {
           try {
-            // Get message details
-            const messageDetails = await syncHelpers.gmail.getMessage(
-              syncClient,
+            // Get message details with rate limiting
+            const messageDetails = await ctx.serviceClient(apiService).fetch({
               accountId,
               externalUserId,
-              message.id,
-              { format: 'metadata', metadataHeaders: ['From', 'Subject', 'Date'] }
-            );
+              url: `https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}`,
+              options: {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json"
+                }
+              },
+              rateLimiterKey: GMAIL_RATE_LIMITER,
+              tokensNeeded: 1 // Single message fetch
+            });
             
             // Extract metadata
             const headers = messageDetails.payload?.headers || [];
@@ -79,7 +85,7 @@ export const inboxSyncObject = restate.object({
         }
         
         // Update sync metadata
-        ctx.set("lastSyncComplete", new Date().toISOString());
+        ctx.set("lastSyncComplete", new Date(await ctx.date.now()).toISOString());
         ctx.set("lastMessageCount", messageList.messages.length);
         
         return {
