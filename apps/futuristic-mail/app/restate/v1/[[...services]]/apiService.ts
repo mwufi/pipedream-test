@@ -12,6 +12,27 @@ const syncClient = createSyncClient({
   }
 });
 
+export function fetchWithPipedreamProxy(input: {
+  accountId: string,
+  externalUserId: string,
+  url: string,
+  options?: any,
+  rateLimiterKey?: string,
+  tokensNeeded?: number
+}) {
+  try {
+    return syncClient.makeProxyRequest({
+      accountId: input.accountId,
+      externalUserId: input.externalUserId,
+      targetUrl: input.url,
+      options: input.options || {}
+    }, { maxRetries: 1 }); // Let Restate handle retries
+  } catch (error) {
+    console.error(`Error making API call: ${error}`);
+    throw error;
+  }
+}
+
 export const apiService = restate.service({
   name: "api",
   handlers: {

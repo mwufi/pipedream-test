@@ -1,7 +1,8 @@
 import * as restate from "@restatedev/restate-sdk";
 import adminDb from "@/lib/instant_serverside_db";
 import { id } from "@instantdb/admin";
-import { apiService } from "../apiService";
+import { fetchWithPipedreamProxy } from "../apiService";
+
 
 interface Contact {
   resourceName?: string;
@@ -23,7 +24,7 @@ async function fetchContactsPage(
   let url = `https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers,organizations&pageSize=${pageSize}`;
   if (pageToken) url += `&pageToken=${pageToken}`;
 
-  return await ctx.serviceClient(apiService).fetch({
+  return await fetchWithPipedreamProxy({
     accountId,
     externalUserId,
     url,

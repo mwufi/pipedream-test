@@ -1,7 +1,7 @@
 import * as restate from "@restatedev/restate-sdk";
 import adminDb from "@/lib/instant_serverside_db";
 import { id } from "@instantdb/admin";
-import { apiService } from "../apiService";
+import { fetchWithPipedreamProxy } from "../apiService";
 
 interface CalendarEvent {
   id: string;
@@ -39,7 +39,7 @@ async function fetchCalendarEvents(
   url += `&maxResults=100`;
   if (pageToken) url += `&pageToken=${pageToken}`;
 
-  return await ctx.serviceClient(apiService).fetch({
+  return await fetchWithPipedreamProxy({
     accountId,
     externalUserId,
     url,
@@ -143,7 +143,7 @@ export const googleCalendarObject = restate.object({
         let totalEventsProcessed = 0;
 
         // Get list of calendars
-        const calendars = await ctx.serviceClient(apiService).fetch({
+        const calendars = await fetchWithPipedreamProxy({
           accountId,
           externalUserId,
           url: "https://www.googleapis.com/calendar/v3/users/me/calendarList",

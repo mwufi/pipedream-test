@@ -1,7 +1,7 @@
 import * as restate from "@restatedev/restate-sdk";
 import adminDb from "@/lib/instant_serverside_db";
 import { id } from "@instantdb/admin";
-import { apiService } from "../apiService";
+import { fetchWithPipedreamProxy } from "../apiService";
 
 interface GmailMessage {
   id: string;
@@ -30,7 +30,7 @@ async function fetchMessage(
   externalUserId: string,
   messageId: string
 ): Promise<GmailMessage> {
-  return await ctx.serviceClient(apiService).fetch({
+  return await fetchWithPipedreamProxy({
     accountId,
     externalUserId,
     url: `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
@@ -136,7 +136,7 @@ export const gmailInboxObject = restate.object({
           console.log("Performing full sync");
 
           // Get the current history ID first
-          const profile = await ctx.serviceClient(apiService).fetch({
+          const profile = await fetchWithPipedreamProxy({
             accountId,
             externalUserId,
             url: "https://gmail.googleapis.com/gmail/v1/users/me/profile",
@@ -149,7 +149,7 @@ export const gmailInboxObject = restate.object({
           // Fetch all messages
           let pageToken: string | undefined;
           do {
-            const messageList = await ctx.serviceClient(apiService).fetch({
+            const messageList = await fetchWithPipedreamProxy({
               accountId,
               externalUserId,
               url: `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100${pageToken ? `&pageToken=${pageToken}` : ''}`,
@@ -187,7 +187,7 @@ export const gmailInboxObject = restate.object({
           const messagesToDelete = new Set<string>();
 
           do {
-            const historyList = await ctx.serviceClient(apiService).fetch({
+            const historyList = await fetchWithPipedreamProxy({
               accountId,
               externalUserId,
               url: `https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=${lastHistoryId}&maxResults=100${pageToken ? `&pageToken=${pageToken}` : ''}`,
