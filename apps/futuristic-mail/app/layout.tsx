@@ -71,7 +71,7 @@ export default function RootLayout({
               </div>
             </div>
           </header>
-          <main className="relative z-20 pt-10 min-h-screen bg-gray-100 overflow-hidden">
+          <main className="relative z-20 pt-[57px] min-h-screen bg-gray-100 overflow-hidden">
             {/* Faint blue background glow */}
             <Image
               src="/glow@q25r.c93b1d41.avif"
