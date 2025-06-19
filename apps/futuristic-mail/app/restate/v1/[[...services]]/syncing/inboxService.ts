@@ -110,6 +110,13 @@ async function deleteMessages(
 export const gmailInboxObject = restate.object({
   name: "Gmail_Inbox",
   handlers: {
+    init: async (ctx: restate.ObjectContext, req: {
+      limit?: number;
+      burst?: number;
+    }) => {
+      const limiter = Limiter.fromContext(ctx, "gmail-api");
+      await limiter.setRate(req.limit || 3, req.burst || 12);
+    },
     sync: async (ctx: restate.ObjectContext, req: {
       accountId: string;
       externalUserId: string;

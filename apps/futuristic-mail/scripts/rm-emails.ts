@@ -29,8 +29,8 @@ async function removeAllEmails() {
         console.log(`Found ${result.emails.length} emails to remove`);
 
         // Chunk emails into batches of 20
-        const emailChunks = chunkArray(result.emails, 50);
-        console.log(`Processing ${emailChunks.length} batches of up to 50 emails each`);
+        const emailChunks = chunkArray(result.emails, 100);
+        console.log(`Processing ${emailChunks.length} batches of up to 100 emails each`);
 
         let totalDeleted = 0;
         const batchTimes: number[] = [];
