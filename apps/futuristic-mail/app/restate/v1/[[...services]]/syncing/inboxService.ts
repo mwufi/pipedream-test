@@ -16,14 +16,6 @@ interface GmailMessage {
   internalDate?: string;
 }
 
-interface GmailHistory {
-  messages?: Array<{ id: string }>;
-  messagesAdded?: Array<{ message: GmailMessage }>;
-  messagesDeleted?: Array<{ message: { id: string } }>;
-  labelsAdded?: Array<{ message: { id: string }; labelIds: string[] }>;
-  labelsRemoved?: Array<{ message: { id: string }; labelIds: string[] }>;
-}
-
 // Helper function to fetch a single message
 async function fetchMessage(
   accountId: string,
@@ -124,14 +116,6 @@ export const gmailInboxObject = restate.object({
     }) => {
       const { accountId, externalUserId } = req;
 
-      // Get the current history ID first
-      const profile = await fetchWithPipedreamProxy({
-        accountId,
-        externalUserId,
-        url: "https://gmail.googleapis.com/gmail/v1/users/me/profile",
-      });
-
-      const currentHistoryId = profile.historyId;
       let messagesProcessed = 0;
 
       // Fetch all messages
@@ -148,18 +132,16 @@ export const gmailInboxObject = restate.object({
 
         if (!messageList.messages || messageList.messages.length === 0) break;
 
-        // Process messages in batches
-        const batchSize = 10;
-        for (let i = 0; i < messageList.messages.length; i += batchSize) {
-          const batch = messageList.messages.slice(i, i + batchSize);
-
-          // Call processMail for each message in the batch
-          await Promise.all(
-            batch.map((msg: { id: string }) =>
-              ctx.serviceClient(gmailProcessor).processMail(msg.id)
-            )
-          );
-        }
+        // Call processMail for each message in the batch
+        await Promise.all(
+          messageList.messages.map((msg: { id: string }) =>
+            ctx.workflowClient(gmailProcessor, msg.id).run({
+              accountId,
+              externalUserId,
+              messageId: msg.id
+            })
+          )
+        );
 
         pageToken = messageList.nextPageToken;
       } while (pageToken);
@@ -171,16 +153,18 @@ export const gmailInboxObject = restate.object({
   },
 });
 
-export const gmailProcessor = restate.service({
+export const gmailProcessor = restate.workflow({
   name: "gmail-processor",
   handlers: {
-    processMail: async (ctx: restate.Context, req: {
+    run: async (ctx: restate.WorkflowContext, req: {
       accountId: string;
       externalUserId: string;
       messageId: string;
     }) => {
       const limiter = Limiter.fromContext(ctx, "gmail-api");
       await limiter.wait();
+
+      console.log(`Processing message ${req.messageId}`);
 
       const { accountId, externalUserId, messageId } = req;
       const message = await fetchMessage(accountId, externalUserId, messageId)
