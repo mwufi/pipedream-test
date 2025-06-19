@@ -13,8 +13,9 @@ export async function GET(request: NextRequest) {
             params.append(key, value);
         });
 
+        // Use the AI-powered index
         const response = await fetch(
-            `${MEILISEARCH_URL}/indexes/emails/search?${params}`,
+            `${MEILISEARCH_URL}/indexes/emails-ai/search?${params}`,
             {
                 headers: {
                     'Content-Type': 'application/json',
@@ -43,8 +44,9 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
 
+        // Use the AI-powered index
         const response = await fetch(
-            `${MEILISEARCH_URL}/indexes/emails/search`,
+            `${MEILISEARCH_URL}/indexes/emails-ai/search`,
             {
                 method: 'POST',
                 headers: {

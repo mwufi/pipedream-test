@@ -18,6 +18,7 @@ interface EmailResult {
     year?: number;
     month?: number;
     hasSnippet?: boolean;
+    _semanticScore?: number;
 }
 
 interface SearchResults {
@@ -45,6 +46,17 @@ export default function EmailSearchPage() {
     const [filters, setFilters] = useState<SearchFilters>({});
     const [facets, setFacets] = useState<Record<string, Record<string, number>>>({});
     const [showFacets, setShowFacets] = useState(true);
+    const [useSemanticSearch, setUseSemanticSearch] = useState(true);
+    const [searchMode, setSearchMode] = useState<'traditional' | 'semantic' | 'hybrid'>('hybrid');
+
+    // Debounced search function
+    const debouncedSearch = useCallback(() => {
+        const timeoutId = setTimeout(() => {
+            performSearch(query, filters);
+        }, 300); // 300ms debounce delay
+
+        return () => clearTimeout(timeoutId);
+    }, [query, filters]);
 
     const performSearch = useCallback(async (searchQuery: string, searchFilters: SearchFilters = {}) => {
         setIsLoading(true);
@@ -56,6 +68,12 @@ export default function EmailSearchPage() {
                 limit: '20',
                 facets: ['fromDomain', 'year', 'dayOfWeek', 'hasSnippet'].join(','),
             });
+
+            // Add hybrid search parameters based on mode
+            if (searchMode === 'semantic' || searchMode === 'hybrid') {
+                params.append('hybridEmbedder', 'emails-openai');
+                params.append('hybridSemanticRatio', searchMode === 'semantic' ? '1.0' : '0.5');
+            }
 
             // Build filter string
             const filterParts: string[] = [];
@@ -92,7 +110,7 @@ export default function EmailSearchPage() {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [searchMode]);
 
     const handleSearch = useCallback((e: React.FormEvent) => {
         e.preventDefault();
@@ -150,10 +168,16 @@ export default function EmailSearchPage() {
         );
     };
 
+    // Real-time search effect
     useEffect(() => {
-        // Load initial results
-        performSearch("", {});
-    }, [performSearch]);
+        if (query.trim() !== '' || Object.keys(filters).length > 0) {
+            const cleanup = debouncedSearch();
+            return cleanup;
+        } else {
+            // Load initial results when query is empty
+            performSearch("", {});
+        }
+    }, [query, filters, debouncedSearch, performSearch]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 p-8">
@@ -161,49 +185,68 @@ export default function EmailSearchPage() {
                 {/* Header */}
                 <div className="text-center mb-8">
                     <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-                        📧 Email Search Lab
+                        🚀 AI-Powered Email Search
                     </h1>
                     <p className="text-gray-600 text-lg">
-                        Search through your email archive with powerful filtering
+                        Search through your email archive with AI semantic search and powerful filtering
                     </p>
                 </div>
 
                 {/* Search Form */}
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 mb-8">
-                    <form onSubmit={handleSearch} className="flex gap-4 items-center">
-                        <div className="flex-1">
-                            <input
-                                type="text"
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Search emails by subject, sender, or content..."
-                                className="w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-lg"
-                            />
+                    <form onSubmit={handleSearch} className="space-y-4">
+                        <div className="flex gap-4 items-center">
+                            <div className="flex-1">
+                                <input
+                                    type="text"
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    placeholder="Search emails by meaning, keywords, or content... (search as you type!)"
+                                    className="w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-lg"
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowFacets(!showFacets)}
+                                className="px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-all"
+                            >
+                                {showFacets ? '🔽' : '▶️'} Filters
+                            </button>
                         </div>
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium rounded-lg hover:from-blue-600 hover:to-purple-600 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-all"
-                        >
-                            {isLoading ? (
-                                <span className="flex items-center">
-                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+
+                        {/* Search Mode Selection */}
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm font-medium text-gray-700">Search Mode:</span>
+                            <div className="flex gap-2">
+                                {[
+                                    { value: 'traditional', label: '📝 Traditional', desc: 'Exact keyword matching' },
+                                    { value: 'semantic', label: '🧠 AI Semantic', desc: 'Search by meaning' },
+                                    { value: 'hybrid', label: '⚡ Hybrid', desc: 'Best of both worlds' }
+                                ].map((mode) => (
+                                    <button
+                                        key={mode.value}
+                                        type="button"
+                                        onClick={() => setSearchMode(mode.value as any)}
+                                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${searchMode === mode.value
+                                            ? 'bg-blue-500 text-white shadow-lg'
+                                            : 'bg-white/80 text-gray-700 hover:bg-white'
+                                            }`}
+                                        title={mode.desc}
+                                    >
+                                        {mode.label}
+                                    </button>
+                                ))}
+                            </div>
+                            {isLoading && (
+                                <div className="flex items-center text-sm text-gray-500">
+                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
                                     Searching...
-                                </span>
-                            ) : (
-                                '🔍 Search'
+                                </div>
                             )}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setShowFacets(!showFacets)}
-                            className="px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-all"
-                        >
-                            {showFacets ? '🔽' : '▶️'} Filters
-                        </button>
+                        </div>
                     </form>
                 </div>
 
@@ -328,10 +371,29 @@ export default function EmailSearchPage() {
                                     <span className="font-medium">Error:</span> {error}
                                 </p>
                                 <p className="text-red-600 text-sm mt-1">
-                                    Make sure Meilisearch is running and the emails have been indexed.
+                                    Make sure Meilisearch is running and the AI-powered emails have been indexed.
                                 </p>
                             </div>
                         )}
+
+                        {/* Search Mode Info */}
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-6">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="text-lg">
+                                    {searchMode === 'traditional' ? '📝' : searchMode === 'semantic' ? '🧠' : '⚡'}
+                                </span>
+                                <h3 className="font-medium text-blue-900">
+                                    {searchMode === 'traditional' && 'Traditional Search'}
+                                    {searchMode === 'semantic' && 'AI Semantic Search'}
+                                    {searchMode === 'hybrid' && 'Hybrid AI Search'}
+                                </h3>
+                            </div>
+                            <p className="text-sm text-blue-700">
+                                {searchMode === 'traditional' && 'Searching for exact keyword matches in email content.'}
+                                {searchMode === 'semantic' && 'Using AI to understand the meaning of your query and find conceptually similar emails.'}
+                                {searchMode === 'hybrid' && 'Combining traditional keyword matching with AI semantic understanding for best results.'}
+                            </p>
+                        </div>
 
                         {results && (
                             <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
@@ -353,7 +415,7 @@ export default function EmailSearchPage() {
                                                 No emails found
                                             </h3>
                                             <p className="text-gray-600">
-                                                Try adjusting your search terms or filters
+                                                Try adjusting your search terms, switching search modes, or clearing filters
                                             </p>
                                         </div>
                                     ) : (
@@ -366,9 +428,16 @@ export default function EmailSearchPage() {
                                                     <h3 className="font-medium text-gray-900 flex-1">
                                                         {getHighlightedText(email.subject, query)}
                                                     </h3>
-                                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full ml-2 whitespace-nowrap">
-                                                        {formatDate(email.date)}
-                                                    </span>
+                                                    <div className="flex items-center gap-2 ml-2">
+                                                        {email._semanticScore !== undefined && (
+                                                            <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                                                                AI: {(email._semanticScore * 100).toFixed(0)}%
+                                                            </span>
+                                                        )}
+                                                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full whitespace-nowrap">
+                                                            {formatDate(email.date)}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
                                                 <div className="flex items-center text-sm text-gray-600 mb-2">
