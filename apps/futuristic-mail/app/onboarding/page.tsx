@@ -37,7 +37,8 @@ export default function OnboardingPage() {
       
       // If onboarding is complete, redirect to home
       if (onboarding.completed) {
-        router.push('/');
+        // router.push('/');
+        console.log('onboarding complete');
         return;
       }
     }

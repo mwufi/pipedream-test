@@ -44,7 +44,7 @@ export default function ClerkSignedInComponent() {
     }
     if (user) {
         return (
-            <div>
+            <div className="hidden">
                 <p>Signed in with Instant through Clerk!</p>{" "}
                 <button
                     onClick={() => {

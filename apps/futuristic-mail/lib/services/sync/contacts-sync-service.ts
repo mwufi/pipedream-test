@@ -1,6 +1,6 @@
 import { BaseSyncService, SyncConfig } from './base-sync-service'
 import { db, contacts, accounts, emails, syncJobs } from '@/lib/db'
-import { eq, and, inArray, desc } from 'drizzle-orm'
+import { eq, and, inArray, desc, isNull } from 'drizzle-orm'
 import { randomUUID } from 'crypto'
 
 interface GoogleContact {
@@ -101,43 +101,65 @@ export class ContactsSyncService extends BaseSyncService {
     let pageToken: string | undefined
     let totalContacts = 0
     let processedContacts = 0
+    let pageCount = 0
+
+    console.log(`Starting Google Contacts sync for account: ${config.pipedreamAccountId}`)
 
     do {
+      pageCount++
       await this.rateLimiter.wait(3)
 
-      const response = await this.apiClient.makeRequest(() =>
-        this.fetchWithPipedreamProxy(
-          config.pipedreamAccountId,
-          `https://people.googleapis.com/v1/people/me/connections?` +
-          `personFields=names,emailAddresses,phoneNumbers,organizations,biographies,photos,addresses,urls` +
-          `&pageSize=100` +
-          (pageToken ? `&pageToken=${pageToken}` : ''),
-          undefined,
-          config.userId
+      try {
+        const response = await this.apiClient.makeRequest(() =>
+          this.fetchWithPipedreamProxy(
+            config.pipedreamAccountId,
+            `https://people.googleapis.com/v1/people/me/connections?` +
+            `personFields=names,emailAddresses,phoneNumbers,organizations,biographies,photos,addresses,urls` +
+            `&pageSize=1000` +
+            (pageToken ? `&pageToken=${pageToken}` : ''),
+            undefined,
+            config.userId
+          )
         )
-      )
 
-      const connections = response.connections || []
-      totalContacts += connections.length
-      
-      await this.updateSyncJob({ totalItems: totalContacts })
+        const connections = response.connections || []
+        totalContacts += connections.length
+        
+        console.log(`Contacts sync - Page ${pageCount}: fetched ${connections.length} contacts, total so far: ${totalContacts}, hasNextPage: ${!!response.nextPageToken}`)
+        
+        await this.updateSyncJob({ totalItems: totalContacts })
 
-      // Process contacts
-      for (const contact of connections) {
-        try {
-          await this.syncSingleContact(config, contact, 'google')
-          processedContacts++
-          await this.updateSyncJob({ processedItems: processedContacts })
-        } catch (error) {
-          console.error(`Failed to sync contact ${contact.resourceName}:`, error)
-          await this.updateSyncJob({ 
-            failedItems: (await this.getSyncJobFailedCount()) + 1 
-          })
+        // Process contacts
+        let skippedNoContactInfo = 0
+        let processedThisPage = 0
+        for (const contact of connections) {
+          try {
+            if ((!contact.emailAddresses || contact.emailAddresses.length === 0) && 
+                (!contact.phoneNumbers || contact.phoneNumbers.length === 0)) {
+              skippedNoContactInfo++
+            } else {
+              await this.syncSingleContact(config, contact, 'google')
+              processedContacts++
+              processedThisPage++
+              await this.updateSyncJob({ processedItems: processedContacts })
+            }
+          } catch (error) {
+            console.error(`Failed to sync contact ${contact.resourceName}:`, error)
+            await this.updateSyncJob({ 
+              failedItems: (await this.getSyncJobFailedCount()) + 1 
+            })
+          }
         }
-      }
+        console.log(`Page ${pageCount} summary: ${processedThisPage}/${connections.length} had email/phone (${skippedNoContactInfo} skipped - no contact info). Total processed: ${processedContacts}`)
 
-      pageToken = response.nextPageToken
+        pageToken = response.nextPageToken
+      } catch (error) {
+        console.error('Error fetching contacts page:', error)
+        throw error
+      }
     } while (pageToken)
+    
+    console.log(`Google Contacts sync completed: ${processedContacts} contacts with email/phone synced out of ${totalContacts} total contacts`)
   }
 
   private async syncSingleContact(
@@ -145,17 +167,21 @@ export class ContactsSyncService extends BaseSyncService {
     contact: GoogleContact,
     source: 'google' | 'gmail'
   ) {
-    // Skip if no email addresses
-    if (!contact.emailAddresses || contact.emailAddresses.length === 0) {
+    // Skip if no email addresses AND no phone numbers
+    if ((!contact.emailAddresses || contact.emailAddresses.length === 0) && 
+        (!contact.phoneNumbers || contact.phoneNumbers.length === 0)) {
       return
     }
 
-    // Get primary email
-    const primaryEmail = contact.emailAddresses[0].value
+    // Get primary email and phone
+    const primaryEmail = contact.emailAddresses?.[0]?.value
+    const primaryPhone = contact.phoneNumbers?.[0]?.value
+    
+    console.log(`Processing contact: ${contact.resourceName}, email: ${primaryEmail || 'none'}, phone: ${primaryPhone || 'none'}`)
     
     // Extract name information
     const name = contact.names?.[0]
-    const displayName = name?.displayName || primaryEmail
+    const displayName = name?.displayName || primaryEmail || primaryPhone || 'Unknown Contact'
     const firstName = name?.givenName
     const lastName = name?.familyName
 
@@ -164,8 +190,8 @@ export class ContactsSyncService extends BaseSyncService {
     const company = org?.name
     const jobTitle = org?.title
 
-    // Extract phone
-    const phone = contact.phoneNumbers?.[0]?.value
+    // Phone is already extracted above
+    const phone = primaryPhone
 
     // Extract bio
     const bio = contact.biographies?.[0]?.value
@@ -185,44 +211,104 @@ export class ContactsSyncService extends BaseSyncService {
       }
     })
 
-    await db.insert(contacts)
-      .values({
-        id: randomUUID(),
-        userId: config.userId,
-        email: primaryEmail,
-        name: displayName,
-        firstName,
-        lastName,
-        phone,
-        company,
-        jobTitle,
-        avatarUrl,
-        notes: bio,
-        socialProfiles,
-        source,
-        sourceAccountId: config.accountId,
-        relationshipStrength: 0,
-        interactionCount: 0,
-        tags: [],
-        customFields: {},
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      .onConflictDoUpdate({
-        target: [contacts.userId, contacts.email],
-        set: {
-          name: displayName,
-          firstName,
-          lastName,
-          phone,
-          company,
-          jobTitle,
-          avatarUrl,
-          notes: bio,
-          socialProfiles,
-          updatedAt: new Date()
+    try {
+      // For phone-only contacts, we need a different conflict strategy
+      if (primaryEmail) {
+        await db.insert(contacts)
+          .values({
+            id: randomUUID(),
+            userId: config.userId,
+            email: primaryEmail,
+            name: displayName,
+            firstName,
+            lastName,
+            phone,
+            company,
+            jobTitle,
+            avatarUrl,
+            notes: bio,
+            socialProfiles,
+            source,
+            sourceAccountId: config.accountId,
+            relationshipStrength: 0,
+            interactionCount: 0,
+            tags: [],
+            customFields: {},
+            createdAt: new Date(),
+            updatedAt: new Date()
+          })
+          .onConflictDoUpdate({
+            target: [contacts.userId, contacts.email],
+            set: {
+              name: displayName,
+              firstName,
+              lastName,
+              phone,
+              company,
+              jobTitle,
+              avatarUrl,
+              notes: bio,
+              socialProfiles,
+              updatedAt: new Date()
+            }
+          })
+        console.log(`Successfully saved contact with email: ${primaryEmail}`)
+      } else {
+        // For phone-only contacts, check if it already exists
+        const existingContact = await db.query.contacts.findFirst({
+          where: and(
+            eq(contacts.userId, config.userId),
+            eq(contacts.phone, phone),
+            isNull(contacts.email)
+          )
+        })
+
+        if (existingContact) {
+          await db.update(contacts)
+            .set({
+              name: displayName,
+              firstName,
+              lastName,
+              company,
+              jobTitle,
+              avatarUrl,
+              notes: bio,
+              socialProfiles,
+              updatedAt: new Date()
+            })
+            .where(eq(contacts.id, existingContact.id))
+          console.log(`Updated phone-only contact: ${phone}`)
+        } else {
+          await db.insert(contacts)
+            .values({
+              id: randomUUID(),
+              userId: config.userId,
+              email: null,
+              name: displayName,
+              firstName,
+              lastName,
+              phone,
+              company,
+              jobTitle,
+              avatarUrl,
+              notes: bio,
+              socialProfiles,
+              source,
+              sourceAccountId: config.accountId,
+              relationshipStrength: 0,
+              interactionCount: 0,
+              tags: [],
+              customFields: {},
+              createdAt: new Date(),
+              updatedAt: new Date()
+            })
+          console.log(`Successfully saved phone-only contact: ${phone}`)
         }
-      })
+      }
+    } catch (error) {
+      console.error(`Failed to save contact ${primaryEmail || primaryPhone}:`, error)
+      throw error
+    }
   }
 
   private async extractContactsFromEmails(config: SyncConfig) {

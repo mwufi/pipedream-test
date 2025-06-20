@@ -45,19 +45,19 @@ export const emails = pgTable('emails', {
   accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
   gmailId: text('gmail_id').notNull(),
   threadId: text('thread_id').notNull(),
-  
+
   // Message details
   subject: text('subject'),
   snippet: text('snippet'),
   body: text('body'),
   htmlBody: text('html_body'),
-  
+
   // Participants
   from: jsonb('from').notNull(), // { email: string, name?: string }
   to: jsonb('to').default([]), // Array of { email: string, name?: string }
   cc: jsonb('cc').default([]),
   bcc: jsonb('bcc').default([]),
-  
+
   // Metadata
   category: emailCategoryEnum('category'),
   labels: jsonb('labels').default([]),
@@ -66,14 +66,14 @@ export const emails = pgTable('emails', {
   isImportant: boolean('is_important').default(false),
   hasAttachments: boolean('has_attachments').default(false),
   attachments: jsonb('attachments').default([]),
-  
+
   // AI fields
   aiSummary: text('ai_summary'),
   aiCategory: text('ai_category'),
   aiSentiment: sentimentEnum('ai_sentiment'),
   aiExtractedData: jsonb('ai_extracted_data').default({}),
   aiEmbedding: jsonb('ai_embedding'), // Will store vector for semantic search
-  
+
   // Timestamps
   sentAt: timestamp('sent_at'),
   receivedAt: timestamp('received_at'),
@@ -116,7 +116,7 @@ export const threads = pgTable('threads', {
 export const contacts = pgTable('contacts', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  email: varchar('email', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }),
   name: text('name'),
   firstName: text('first_name'),
   lastName: text('last_name'),
@@ -124,32 +124,33 @@ export const contacts = pgTable('contacts', {
   company: text('company'),
   jobTitle: text('job_title'),
   avatarUrl: text('avatar_url'),
-  
+
   // Relationship tracking
   relationshipStrength: integer('relationship_strength').default(0), // 0-100
   lastInteractionAt: timestamp('last_interaction_at'),
   interactionCount: integer('interaction_count').default(0),
-  
+
   // Social and custom data
   socialProfiles: jsonb('social_profiles').default({}),
   customFields: jsonb('custom_fields').default({}),
   tags: jsonb('tags').default([]),
   notes: text('notes'),
-  
+
   // Source tracking
   source: varchar('source', { length: 50 }), // 'gmail', 'manual', 'enriched'
   sourceAccountId: text('source_account_id').references(() => accounts.id),
-  
+
   // AI fields
   aiEnrichedData: jsonb('ai_enriched_data').default({}),
   aiEmbedding: jsonb('ai_embedding'), // For semantic search
-  
+
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
   userIdIdx: index('contacts_user_id_idx').on(table.userId),
   emailIdx: index('contacts_email_idx').on(table.email),
-  uniqueUserEmail: uniqueIndex('contacts_user_email_idx').on(table.userId, table.email),
+  phoneIdx: index('contacts_phone_idx').on(table.phone),
+  userIdEmailIdx: uniqueIndex('contacts_user_id_email_idx').on(table.userId, table.email),
 }))
 
 // Calendar events table
@@ -158,40 +159,40 @@ export const calendarEvents = pgTable('calendar_events', {
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
   googleEventId: text('google_event_id').notNull(),
-  
+
   // Event details
   title: text('title').notNull(),
   description: text('description'),
   location: text('location'),
-  
+
   // Timing
   startTime: timestamp('start_time').notNull(),
   endTime: timestamp('end_time').notNull(),
   isAllDay: boolean('is_all_day').default(false),
   timezone: varchar('timezone', { length: 100 }),
-  
+
   // Participants
   organizer: jsonb('organizer'), // { email: string, name?: string }
   attendees: jsonb('attendees').default([]), // Array of participants
-  
+
   // Status and metadata
   status: varchar('status', { length: 50 }), // 'confirmed', 'tentative', 'cancelled'
   visibility: varchar('visibility', { length: 50 }), // 'public', 'private'
   isBusy: boolean('is_busy').default(true),
-  
+
   // Meeting details
   meetingUrl: text('meeting_url'),
   conferenceData: jsonb('conference_data').default({}),
-  
+
   // Recurrence
   isRecurring: boolean('is_recurring').default(false),
   recurringEventId: text('recurring_event_id'),
   recurrenceRule: text('recurrence_rule'),
-  
+
   // AI fields
   aiSummary: text('ai_summary'),
   aiExtractedTopics: jsonb('ai_extracted_topics').default([]),
-  
+
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
@@ -207,20 +208,20 @@ export const syncJobs = pgTable('sync_jobs', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
-  
+
   type: varchar('type', { length: 50 }).notNull(), // 'email', 'calendar', 'contacts'
   status: syncStatusEnum('status').notNull().default('pending'),
-  
+
   // Progress tracking
   totalItems: integer('total_items').default(0),
   processedItems: integer('processed_items').default(0),
   failedItems: integer('failed_items').default(0),
-  
+
   // Metadata
   config: jsonb('config').default({}), // Sync configuration
   result: jsonb('result').default({}), // Sync results
   error: text('error'),
-  
+
   startedAt: timestamp('started_at'),
   completedAt: timestamp('completed_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

@@ -13,6 +13,7 @@ import Image from "next/image";
 import EmailAgent from "@/components/EmailAgent";
 import "./globals.css";
 import ClerkSignedInComponent from "@/components/ClerkSignedInComponent";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,11 +48,11 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen relative bg-stone-100`}
         >
-
-
-          <header className="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-sm border-b border-white/10">
+          <header className="fixed top-0 left-0 right-0 z-50 bg-transparent ">
             <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-              <h1 className="text-xl font-bold">Neo Mail</h1>
+              <Link href="/" className="text-xl font-bold hover:opacity-80 transition-opacity">
+                Neo Mail
+              </Link>
               <div className="flex gap-4">
                 <SignedOut>
                   <SignInButton mode="modal">
@@ -71,7 +72,7 @@ export default function RootLayout({
               </div>
             </div>
           </header>
-          <main className="relative z-20 pt-[57px] min-h-screen bg-gray-100 overflow-hidden">
+          <main className="relative z-20 min-h-screen bg-gray-100 overflow-hidden">
             {/* Faint blue background glow */}
             <Image
               src="/glow@q25r.c93b1d41.avif"
