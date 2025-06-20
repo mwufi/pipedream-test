@@ -42,19 +42,35 @@ export class GmailSyncService extends BaseSyncService {
         throw new Error('Account not found')
       }
 
-      // Calculate date 1 month ago
-      const oneMonthAgo = new Date()
-      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
-      const dateQuery = `after:${Math.floor(oneMonthAgo.getTime() / 1000)}`
+      const syncState = account.syncState as { historyId?: string, lastSync?: string } || {}
+      const lastHistoryId = syncState.historyId
+      const lastSync = syncState.lastSync ? new Date(syncState.lastSync) : null
 
-      // Sync threads from the last month
-      await this.syncThreads(config, dateQuery)
+      // Determine sync strategy
+      if (lastHistoryId && lastSync) {
+        // Use incremental sync with history API
+        console.log(`Using incremental sync from history ID: ${lastHistoryId}`)
+        await this.incrementalSync(config, lastHistoryId)
+      } else {
+        // Initial sync or fallback to date-based sync
+        console.log('Performing initial sync (last month)')
+        const oneMonthAgo = new Date()
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+        const dateQuery = `after:${Math.floor(oneMonthAgo.getTime() / 1000)}`
+        await this.syncThreads(config, dateQuery)
+      }
 
-      // Update last synced timestamp
+      // Get the latest history ID for next sync
+      const latestHistoryId = await this.getLatestHistoryId(config)
+
+      // Update last synced timestamp and history ID
       await db.update(accounts)
         .set({ 
           lastSyncedAt: new Date(),
-          syncState: { lastSync: new Date().toISOString() }
+          syncState: { 
+            historyId: latestHistoryId,
+            lastSync: new Date().toISOString()
+          }
         })
         .where(eq(accounts.id, config.accountId))
 
@@ -103,7 +119,10 @@ export class GmailSyncService extends BaseSyncService {
         try {
           await this.syncSingleThread(config, threadSummary.id)
           processedThreads++
-          await this.updateSyncJob({ processedItems: processedThreads })
+          console.log(`Processed ${processedThreads} threads`)
+          if(processedThreads % 10 === 0) {
+            await this.updateSyncJob({ processedItems: processedThreads })
+          }
         } catch (error) {
           console.error(`Failed to sync thread ${threadSummary.id}:`, error)
           await this.updateSyncJob({ 
@@ -371,5 +390,91 @@ export class GmailSyncService extends BaseSyncService {
     })
     
     return job?.failedItems || 0
+  }
+
+  private async getLatestHistoryId(config: SyncConfig): Promise<string> {
+    // Get the user's profile to get the latest history ID
+    const profile = await this.apiClient.makeRequest(() =>
+      this.fetchWithPipedreamProxy(
+        config.pipedreamAccountId,
+        'https://gmail.googleapis.com/gmail/v1/users/me/profile',
+        undefined,
+        config.userId
+      )
+    )
+    
+    return profile.historyId
+  }
+
+  private async incrementalSync(config: SyncConfig, startHistoryId: string) {
+    let pageToken: string | undefined
+    const affectedThreadIds = new Set<string>()
+    
+    do {
+      // Rate limit the history request
+      await this.rateLimiter.wait(5)
+      
+      const response = await this.apiClient.makeRequest(() =>
+        this.fetchWithPipedreamProxy(
+          config.pipedreamAccountId,
+          `https://gmail.googleapis.com/gmail/v1/users/me/history?startHistoryId=${startHistoryId}${
+            pageToken ? `&pageToken=${pageToken}` : ''
+          }`,
+          undefined,
+          config.userId
+        )
+      )
+      
+      if (response.history) {
+        // Process history items
+        for (const historyItem of response.history) {
+          // Collect affected thread IDs from messages added, deleted, or modified
+          if (historyItem.messagesAdded) {
+            historyItem.messagesAdded.forEach((item: any) => {
+              if (item.message?.threadId) {
+                affectedThreadIds.add(item.message.threadId)
+              }
+            })
+          }
+          
+          if (historyItem.messagesDeleted) {
+            historyItem.messagesDeleted.forEach((item: any) => {
+              if (item.message?.threadId) {
+                affectedThreadIds.add(item.message.threadId)
+              }
+            })
+          }
+          
+          if (historyItem.labelsAdded || historyItem.labelsRemoved) {
+            const items = [...(historyItem.labelsAdded || []), ...(historyItem.labelsRemoved || [])]
+            items.forEach((item: any) => {
+              if (item.message?.threadId) {
+                affectedThreadIds.add(item.message.threadId)
+              }
+            })
+          }
+        }
+      }
+      
+      pageToken = response.nextPageToken
+    } while (pageToken)
+    
+    // Sync affected threads
+    console.log(`Found ${affectedThreadIds.size} affected threads to sync`)
+    await this.updateSyncJob({ totalItems: affectedThreadIds.size })
+    
+    let processedThreads = 0
+    for (const threadId of affectedThreadIds) {
+      try {
+        await this.syncSingleThread(config, threadId)
+        processedThreads++
+        await this.updateSyncJob({ processedItems: processedThreads })
+      } catch (error) {
+        console.error(`Failed to sync thread ${threadId}:`, error)
+        await this.updateSyncJob({ 
+          failedItems: (await this.getSyncJobFailedCount()) + 1 
+        })
+      }
+    }
   }
 }
