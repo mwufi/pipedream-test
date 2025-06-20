@@ -48,42 +48,7 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen relative bg-stone-100`}
         >
-          <header className="fixed top-0 left-0 right-0 z-50 bg-transparent ">
-            <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-              <Link href="/" className="text-xl font-bold hover:opacity-80 transition-opacity">
-                Neo Mail
-              </Link>
-              <div className="flex gap-4">
-                <SignedOut>
-                  <SignInButton mode="modal">
-                    <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors">
-                      Sign In
-                    </button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <button className="px-4 py-2 bg-white text-black hover:bg-white/90 rounded-lg font-medium transition-colors">
-                      Sign Up
-                    </button>
-                  </SignUpButton>
-                </SignedOut>
-                <SignedIn>
-                  <UserButton afterSignOutUrl="/" />
-                </SignedIn>
-              </div>
-            </div>
-          </header>
-          <main className="relative z-20 min-h-screen bg-gray-100 overflow-hidden">
-            {/* Faint blue background glow */}
-            <Image
-              src="/glow@q25r.c93b1d41.avif"
-              alt=""
-              width={1800}
-              height={1800}
-              className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[150vh] max-w-none -translate-x-1/2 -translate-y-1/2 select-none mix-blend-overlay"
-              style={{ color: 'transparent' }}
-            />
-            {children}
-          </main>
+          {children}
           <SignedIn>
             <EmailAgent />
             <ClerkSignedInComponent />
