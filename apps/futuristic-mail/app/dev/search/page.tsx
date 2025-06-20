@@ -193,11 +193,11 @@ export default function EmailSearchPage() {
     return (
         <div className="min-h-screen bg-white">
             {/* Superhuman-style top bar */}
-            <div className="border-b border-gray-200 px-6 py-3">
+            <div className="border-b border-gray-200 px-6 py-4 bg-white">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-lg font-medium text-gray-900">Email Search</h1>
-                        <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-6">
+                        <h1 className="text-lg font-semibold text-gray-900">Search</h1>
+                        <div className="flex items-center gap-1 bg-gray-100 rounded-md p-0.5">
                             {[
                                 { value: 'traditional', label: 'Keyword' },
                                 { value: 'semantic', label: 'AI' },
@@ -206,8 +206,8 @@ export default function EmailSearchPage() {
                                 <button
                                     key={mode.value}
                                     onClick={() => setSearchMode(mode.value as any)}
-                                    className={`px-2 py-1 text-xs rounded ${searchMode === mode.value
-                                        ? 'bg-blue-100 text-blue-700'
+                                    className={`px-3 py-1.5 text-xs font-medium rounded transition-all ${searchMode === mode.value
+                                        ? 'bg-white text-gray-900 shadow-sm'
                                         : 'text-gray-600 hover:text-gray-900'
                                         }`}
                                 >
@@ -217,17 +217,17 @@ export default function EmailSearchPage() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                         <input
                             type="text"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder="Search emails..."
-                            className="w-80 px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-96 px-4 py-2 text-sm bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                         />
                         <button
                             onClick={() => setShowFacets(!showFacets)}
-                            className="text-sm text-gray-600 hover:text-gray-900"
+                            className={`text-sm font-medium transition-colors ${showFacets ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
                         >
                             Filters
                         </button>
@@ -235,12 +235,12 @@ export default function EmailSearchPage() {
                 </div>
 
                 {showFacets && (
-                    <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4">
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-4">
                         {facets.fromDomain && (
                             <select
                                 value={filters.fromDomain || ''}
                                 onChange={(e) => handleFilterChange('fromDomain', e.target.value)}
-                                className="text-xs border border-gray-300 rounded px-2 py-1"
+                                className="text-xs bg-white border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="">All domains</option>
                                 {Object.entries(facets.fromDomain)
@@ -258,7 +258,7 @@ export default function EmailSearchPage() {
                             <select
                                 value={filters.year || ''}
                                 onChange={(e) => handleFilterChange('year', e.target.value ? parseInt(e.target.value) : null)}
-                                className="text-xs border border-gray-300 rounded px-2 py-1"
+                                className="text-xs bg-white border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="">All years</option>
                                 {Object.entries(facets.year)
@@ -274,7 +274,7 @@ export default function EmailSearchPage() {
                         {Object.keys(filters).length > 0 && (
                             <button
                                 onClick={clearFilters}
-                                className="text-xs text-red-600 hover:text-red-800"
+                                className="text-xs text-red-600 hover:text-red-800 font-medium"
                             >
                                 Clear filters
                             </button>
@@ -284,9 +284,9 @@ export default function EmailSearchPage() {
             </div>
 
             {/* Superhuman-style email list */}
-            <div className="px-6">
+            <div>
                 {error && (
-                    <div className="py-4 text-sm text-red-600">
+                    <div className="px-6 py-4 text-sm text-red-600 bg-red-50 border-b border-red-100">
                         Error: {error}
                     </div>
                 )}
@@ -294,55 +294,53 @@ export default function EmailSearchPage() {
                 {results && (
                     <>
                         {/* Status bar like Superhuman */}
-                        <div className="flex items-center justify-between py-3 text-xs text-gray-500 border-b border-gray-100">
-                            <div>
+                        <div className="flex items-center justify-between px-6 py-3 text-xs text-gray-500 bg-gray-50 border-b border-gray-200">
+                            <div className="font-medium">
                                 {results.estimatedTotalHits.toLocaleString()} emails
-                                {isLoading && <span className="ml-2">Searching...</span>}
+                                {isLoading && <span className="ml-2 text-blue-600">Searching...</span>}
                             </div>
-                            <div>
+                            <div className="font-medium">
                                 {searchMode === 'traditional' && 'Keyword search'}
                                 {searchMode === 'semantic' && 'AI semantic search'}
                                 {searchMode === 'hybrid' && 'Hybrid search'}
+                                <span className="ml-2 text-gray-400">•</span>
+                                <span className="ml-2">{results.processingTimeMs}ms</span>
                             </div>
                         </div>
 
                         {/* Email list - Superhuman style */}
-                        <div>
+                        <div className="divide-y divide-gray-100">
                             {results.hits.length === 0 ? (
-                                <div className="py-12 text-center text-gray-500">
-                                    <div className="text-2xl mb-2">📭</div>
-                                    <div className="text-sm">No emails found</div>
+                                <div className="py-16 text-center text-gray-500">
+                                    <div className="text-3xl mb-3">📭</div>
+                                    <div className="text-sm font-medium">No emails found</div>
+                                    <div className="text-xs text-gray-400 mt-1">Try adjusting your search terms or filters</div>
                                 </div>
                             ) : (
                                 results.hits.map((email) => (
                                     <div
                                         key={email.id}
-                                        className="grid grid-cols-12 gap-4 py-2 hover:bg-gray-50 cursor-pointer group border-b border-gray-50"
+                                        className="grid grid-cols-12 gap-4 px-6 py-3 hover:bg-blue-50 cursor-pointer group transition-colors"
                                     >
                                         {/* Sender column - like Superhuman's left column */}
-                                        <div className="col-span-3 flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                            <div className="truncate">
-                                                <div className="text-sm font-medium text-gray-900 truncate">
+                                        <div className="col-span-3 flex items-center gap-3">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                            <div className="truncate min-w-0">
+                                                <div className="text-sm font-semibold text-gray-900 truncate">
                                                     {extractSenderName(email.from)}
                                                 </div>
-                                                {email.fromDomain && (
-                                                    <div className="text-xs text-gray-500">
-                                                        {email.fromDomain}
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
 
                                         {/* Subject and snippet - like Superhuman's middle column */}
                                         <div className="col-span-7 min-w-0">
                                             <div className="text-sm text-gray-900 truncate flex items-center gap-2">
-                                                <span className="font-medium">
+                                                <span className="font-semibold">
                                                     {getHighlightedText(email.subject, query)}
                                                 </span>
                                                 {email.snippet && (
                                                     <>
-                                                        <span className="text-gray-400">—</span>
+                                                        <span className="text-gray-300 font-normal">—</span>
                                                         <span className="text-gray-600 font-normal">
                                                             {getHighlightedText(email.snippet, query)}
                                                         </span>
@@ -354,11 +352,11 @@ export default function EmailSearchPage() {
                                         {/* Date and metadata - like Superhuman's right column */}
                                         <div className="col-span-2 text-right flex items-center justify-end gap-2">
                                             {email._semanticScore !== undefined && (
-                                                <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
+                                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
                                                     {(email._semanticScore * 100).toFixed(0)}%
                                                 </span>
                                             )}
-                                            <div className="text-xs text-gray-500 font-medium">
+                                            <div className="text-xs text-gray-500 font-semibold tracking-wide">
                                                 {formatDate(email.date)}
                                             </div>
                                         </div>
