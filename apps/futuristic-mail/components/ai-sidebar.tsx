@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useChat } from "ai/react";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface AISidebarProps {
   isOpen: boolean;
@@ -51,7 +52,7 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <ScrollArea className="flex-1 p-4 space-y-4 h-[calc(100vh-130px)]">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -83,7 +84,7 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
               </div>
             </div>
           )}
-        </div>
+        </ScrollArea>
 
         {/* Input */}
         <form onSubmit={handleSubmit} className="p-4 border-t">
