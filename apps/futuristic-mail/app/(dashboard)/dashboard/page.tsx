@@ -27,14 +27,13 @@ export default function Page() {
         }
       >
         <AppSidebar variant="inset" />
-        <SidebarInset className="flex flex-row gap-2 bg-transparent shadow-none!">
-          <div className="flex flex-1 flex-col bg-background rounded-xl shadow-sm">
-            <SiteHeader />
-            <div className="@container/main flex flex-1 gap-2 h-[90vh]">
-              <div className="flex-1 overflow-y-auto">
+        <SidebarInset className="flex flex-row gap-2 h-[98vh] overflow-hidden bg-transparent shadow-none!">
+          <div className="flex flex-1 flex-col bg-background rounded-xl shadow-sm overflow-hidden">
+            <SiteHeader className="shrink-0" />
+            <div className="@container/main flex-1 flex gap-2 min-h-0">
+              <ScrollArea className="flex-1 w-full">
                 <SimpleEditor />
-              </div>
-
+              </ScrollArea>
             </div>
           </div>
 
