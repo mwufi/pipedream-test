@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useChat } from "ai/react";
 import { useUser } from "@clerk/nextjs";
+import { useAISidebar } from "@/contexts/ai-sidebar-context";
 
 export default function EmailAgent() {
   const [isHovered, setIsHovered] = useState(false);
@@ -10,6 +11,7 @@ export default function EmailAgent() {
   const inputRef = useRef<HTMLInputElement>(null);
   const hoverTimeoutRef = useRef<number | undefined>(undefined);
   const { user } = useUser();
+  const { isOpen: isAISidebarOpen } = useAISidebar();
 
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: "/api/chat",
@@ -67,13 +69,15 @@ export default function EmailAgent() {
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-50"
+      className={`fixed bottom-6 z-50 transition-all duration-300 ${
+        isAISidebarOpen ? "hidden" : "right-6"
+      }`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Chat Interface */}
       <div
-        className={`absolute bottom-0 right-0 transition-all duration-300 ${isExpanded
+        className={`absolute bottom-0 ${isAISidebarOpen ? "left-0" : "right-0"} transition-all duration-300 ${isExpanded
           ? "w-80 h-96 mb-20 opacity-100 translate-y-0"
           : "w-16 h-16 opacity-0 translate-y-4 pointer-events-none"
           }`}

@@ -14,6 +14,7 @@ import EmailAgent from "@/components/EmailAgent";
 import "./globals.css";
 import ClerkSignedInComponent from "@/components/ClerkSignedInComponent";
 import Link from "next/link";
+import { AISidebarProvider } from "@/contexts/ai-sidebar-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,11 +49,13 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen relative bg-stone-100`}
         >
-          {children}
-          <SignedIn>
-            <EmailAgent />
-            <ClerkSignedInComponent />
-          </SignedIn>
+          <AISidebarProvider>
+            {children}
+            <SignedIn>
+              <EmailAgent />
+              <ClerkSignedInComponent />
+            </SignedIn>
+          </AISidebarProvider>
         </body>
       </html>
     </ClerkProvider>
