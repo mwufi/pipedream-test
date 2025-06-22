@@ -10,7 +10,10 @@ const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/
 const queryClient = postgres(connectionString)
 
 // Create the drizzle instance
-export const db = drizzle(queryClient, { schema })
+export const db = drizzle(queryClient, {
+    schema,
+    logger: true // This will log all SQL queries to console
+})
 
 // Export schema for convenience
 export * from './schema'

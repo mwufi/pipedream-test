@@ -34,11 +34,15 @@ export const createReadCalendarEventsTool = (userId: string) => tool({
       }
 
       // Get user's accounts
+      console.log('[readCalendarEventsTool] Fetching user accounts...');
       const userAccounts = await db.select({ id: accounts.id })
         .from(accounts)
         .where(eq(accounts.userId, userId));
+      
+      console.log(`[readCalendarEventsTool] Found ${userAccounts.length} accounts`);
 
       if (userAccounts.length === 0) {
+        console.log('[readCalendarEventsTool] No accounts found, returning empty array');
         return [];
       }
 
@@ -51,7 +55,7 @@ export const createReadCalendarEventsTool = (userId: string) => tool({
       if (accountId) {
         conditions.push(eq(calendarEvents.accountId, accountId));
       } else {
-        conditions.push(sql`${calendarEvents.accountId} IN (${sql.join(accountIds, sql`, `)})`);
+        conditions.push(sql`${calendarEvents.accountId} IN (${sql.join(accountIds.map(id => sql`${id}`), sql`, `)})`);
       }
 
       // Search filter
@@ -92,12 +96,36 @@ export const createReadCalendarEventsTool = (userId: string) => tool({
       .orderBy(desc(calendarEvents.startTime))
       .limit(limit);
 
+      console.log('[readCalendarEventsTool] Executing query...');
       const result = await query;
-      console.log(`[readCalendarEventsTool] Found ${result.length} events`);
-      return result;
+      console.log(`[readCalendarEventsTool] Query complete. Found ${result.length} events`);
+      
+      // Return simplified data to avoid serialization issues
+      return result.map(event => ({
+        id: event.id,
+        title: event.title || '',
+        description: event.description || '',
+        location: event.location || '',
+        startTime: event.startTime,
+        endTime: event.endTime,
+        isAllDay: event.isAllDay,
+        status: event.status || '',
+        organizer: event.organizer || {},
+        attendees: event.attendees || [],
+      }));
     } catch (error) {
-      console.error('[readCalendarEventsTool] Error:', error);
-      throw error;
+      console.error('[readCalendarEventsTool] Error details:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        userId,
+        search,
+        startDate: defaultStartDate,
+        endDate: defaultEndDate,
+        limit: safeLimit
+      });
+      
+      // Return empty array instead of throwing to prevent UI stalls
+      return [];
     }
   },
 });
