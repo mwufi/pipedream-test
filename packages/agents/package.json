@@ -1,0 +1,9 @@
+{
+  "name": "@repo/agents",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "@openai/agents": "^0.0.9"
+  }
+}
