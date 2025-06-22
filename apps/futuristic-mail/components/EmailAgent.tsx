@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useChat } from "ai/react";
+import { useChat } from "@ai-sdk/react";
 import { useUser } from "@clerk/nextjs";
 import { useAISidebar } from "@/contexts/ai-sidebar-context";
 
