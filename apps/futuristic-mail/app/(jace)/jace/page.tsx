@@ -70,8 +70,8 @@ export default function AraPage() {
                 "Needs Reply".</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-              <div className="bg-white/10 rounded-3xl p-8 pr-0 max-h-[600px]">
-                <ScrollArea className="h-full pr-8">
+              <ScrollArea className="max-h-[600px] rounded-3xl overflow-hidden">
+                <div className="h-full bg-white/10 p-8">
                   <div className="flex flex-col gap-8">
                     <div>
                       <div className="flex flex-col gap-md">
@@ -140,8 +140,8 @@ export default function AraPage() {
                       </div>
                     </div>
                   </div>
-                </ScrollArea>
-              </div>
+                </div>
+              </ScrollArea>
               <div className="bg-white/10 rounded-3xl p-8 max-h-[600px]">
                 <ScrollArea className="h-full">
                   <div className="flex flex-col gap-8">
