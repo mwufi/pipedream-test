@@ -52,7 +52,7 @@
   --font-mono: var(--font-geist-mono);
   --text-xs: 0.5625rem;
   --text-sm: 0.6875rem;
-  --text-md: 0.8125rem;
+  --text-md: 0.9125rem;
   --text-lg: 1rem;
   --text-2xl: 1.5rem;
   --text-xl: 1.25rem;
@@ -88,7 +88,9 @@
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
+  --surface-highlight: #ffdc61;
   --radius-xl: calc(var(--radius) + 4px);
+  --text-body-color-inverted: #293045;
 }
 
 /* Custom radial gradient utility */
@@ -107,6 +109,10 @@
 
 .bg-input-background {
   background-color: var(--input-background-default);
+}
+
+.text-text-body-inverted {
+  color: var(--text-body-color-inverted);
 }
 
 .dark {
@@ -141,6 +147,13 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+.bg-surface-highlight {
+  background-color: var(--surface-highlight);
+}
+.border-surface-highlight {
+  border-color: var(--surface-highlight);
 }
 
 @layer base {
