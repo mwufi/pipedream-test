@@ -9,6 +9,10 @@ export default function AraPage() {
     { id: 'rule-dBnEeZ96YaJFKSZ5HNjtCU', content: 'ok sure', isNew: false }
   ]);
 
+  const [schedulingRules, setSchedulingRules] = useState([
+    { id: 'scheduling-rule-1', content: 'Only schedule meetings between 9am and 5pm, Monday to Friday', isNew: false }
+  ]);
+
   const handleSaveRule = (id: string, content: string) => {
     setRules(rules.map(rule =>
       rule.id === id ? { ...rule, content, isNew: false } : rule
@@ -26,6 +30,25 @@ export default function AraPage() {
       isNew: true
     };
     setRules([...rules, newRule]);
+  };
+
+  const handleSaveSchedulingRule = (id: string, content: string) => {
+    setSchedulingRules(schedulingRules.map(rule =>
+      rule.id === id ? { ...rule, content, isNew: false } : rule
+    ));
+  };
+
+  const handleDeleteSchedulingRule = (id: string) => {
+    setSchedulingRules(schedulingRules.filter(rule => rule.id !== id));
+  };
+
+  const handleAddSchedulingRule = () => {
+    const newRule = {
+      id: `scheduling-rule-${Date.now()}`,
+      content: '',
+      isNew: true
+    };
+    setSchedulingRules([...schedulingRules, newRule]);
   };
 
   return (
@@ -76,17 +99,17 @@ export default function AraPage() {
                         </button>
                       </div>
                       <div className="flex flex-col gap-xs mt-4">
-                        <label className="text-md font-medium text-foreground">Person to CC (name and email
+                        <label className="text-md font-medium text-foreground mb-2">Person to CC (name and email
                           - who will handle setting up meetings)</label>
                         <div
-                          className="flex flex-col w-full gap-xs rounded-input bg-input-background px-lg py-md text-input-text">
+                          className="flex flex-col w-full gap-xs rounded-input rounded-lg bg-input-background text-input-text">
                           <input
-                            className="text-md outline-none max-w-md bg-transparent text-foreground placeholder:text-input-text-placeholder"
+                            className="text-md outline-none max-w-md p-3 bg-transparent text-foreground placeholder:text-input-text-placeholder"
                             placeholder="e.g. Sarah, sarah@company.com" type="text"
                             defaultValue="tangzen09@gmail.com" />
                         </div>
                       </div>
-                      <div className="flex flex-col gap-sm mt-6">
+                      <div className="flex flex-col gap-4 mt-6">
                         <div className="flex flex-col gap-xs mb-4">
                           <h3 className="font-medium text-foreground">Additional Scheduling
                             Preferences <span
@@ -95,37 +118,22 @@ export default function AraPage() {
                           <p className="text-md text-text-body-muted">Define any other specific
                             preferences for how Ara handles scheduling.</p>
                         </div>
-                        <div id="new-rule"
-                          className="bg-neutral-800/50 rounded-lg overflow-hidden transition-all duration-200">
-                          <div className="px-4 py-3 space-y-2">
-                            <div className="flex flex-col gap-xs">
-                              <textarea name="content"
-                                placeholder="e.g., Only schedule meetings between 9am and 5pm, Monday to Friday"
-                                className="w-full text-md bg-input-background text-input-text placeholder:text-input-text-placeholder resize-none outline-none rounded-input px-3 py-2.5 overflow-hidden h-auto"
-                                style={{ minHeight: '36px', height: '40px' }}></textarea>
-                              <div
-                                className="flex justify-between items-center pt-2">
-                                <input className="hidden" multiple type="file" />
-                                <button
-                                  className="inline-flex w-[32px] h-[32px] rounded-md grow-0 shrink-0 justify-center items-center text-icon-light-gray hover:text-icon-light-gray/80 hover:bg-button-bg-ghost-hover"
-                                  data-state="closed">
-                                  <Paperclip className="inline-block flex-grow-0 flex-shrink-0 text-inherit w-icon-xs h-icon-xs" />
-                                </button>
-                                <div className="flex gap-xs">
-                                  <button
-                                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 transition-all duration-200 active:scale-[.99] hover:bg-button-bg-ghost h-8 w-8 text-icon-light-gray/50 cursor-not-allowed"
-                                    disabled>
-                                    <Check className="inline-block flex-grow-0 flex-shrink-0 text-inherit w-icon-xs h-icon-xs" />
-                                  </button>
-                                  <button
-                                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[.99] hover:bg-button-bg-ghost h-8 w-8 text-icon-light-gray hover:text-icon-light-gray/80 transition-opacity duration-150 opacity-100">
-                                    <X className="inline-block flex-grow-0 flex-shrink-0 text-inherit w-icon-xs h-icon-xs" />
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                        {schedulingRules.map((rule) => (
+                          <RuleCard
+                            key={rule.id}
+                            id={rule.id}
+                            initialContent={rule.content}
+                            initialIsEditing={rule.isNew}
+                            onSave={(content) => handleSaveSchedulingRule(rule.id, content)}
+                            onDelete={() => handleDeleteSchedulingRule(rule.id)}
+                          />
+                        ))}
+                        <button
+                          onClick={handleAddSchedulingRule}
+                          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 transition-all duration-200 active:scale-[.99] bg-button-bg-base text-button-text-base shadow hover:opacity-80 h-8 px-4 self-start text-md py-3">
+                          <Plus className="inline-block flex-grow-0 flex-shrink-0 w-icon-md h-icon-md mr-1 text-white" />
+                          Add Scheduling Rule
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -163,7 +171,7 @@ export default function AraPage() {
                         ))}
                         <button
                           onClick={handleAddRule}
-                          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 transition-all duration-200 active:scale-[.99] bg-button-bg-base text-button-text-base shadow hover:opacity-80 h-8 px-4 self-start text-md mt-4 py-3">
+                          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 transition-all duration-200 active:scale-[.99] bg-button-bg-base text-button-text-base shadow hover:opacity-80 h-8 px-4 self-start text-md py-3">
                           <Plus className="inline-block flex-grow-0 flex-shrink-0 w-icon-md h-icon-md mr-1 text-white" />
                           Add Another Rule
                         </button>

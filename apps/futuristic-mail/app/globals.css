@@ -47,6 +47,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --input-background-default: #282828;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --text-xs: 0.5625rem;
@@ -102,6 +103,10 @@
 
 .bg-gray-300-mixed {
   background-color: color-mix(in srgb, var(--gray-300) calc(var(--tw-bg-opacity) * 100%), transparent);
+}
+
+.bg-input-background {
+  background-color: var(--input-background-default);
 }
 
 .dark {
