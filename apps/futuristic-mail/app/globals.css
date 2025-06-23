@@ -11,8 +11,8 @@
   --gray-800: #1f2937;
   --radius: 0.625rem;
   --background: oklch(1 0 0);
-  /* --foreground: oklch(0.145 0 0); */
-  --foreground: #fff6ee;
+  --foreground: oklch(0.145 0 0);
+  /* --foreground: #fff6ee; */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -45,6 +45,10 @@
   --email-text-default: rgba(255,255,255,0.56);
   --email-text-muted: #646464;
   --email-text-highlighted: rgba(255,255,255,0.88);
+}
+
+div[data-color-mode="dark"] {
+  --foreground: oklch(0.985 0 0);
 }
 
 .max-w-inbox {

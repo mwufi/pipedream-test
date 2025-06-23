@@ -15,6 +15,7 @@ import "./globals.css";
 import ClerkSignedInComponent from "@/components/ClerkSignedInComponent";
 import Link from "next/link";
 import { AISidebarProvider } from "@/contexts/ai-sidebar-context";
+import { QueryProvider } from "@/components/providers/query-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,17 +46,19 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" data-color-mode="dark">
+      <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen relative bg-stone-100`}
         >
-          <AISidebarProvider>
-            {children}
-            <SignedIn>
-              <EmailAgent />
-              <ClerkSignedInComponent />
-            </SignedIn>
-          </AISidebarProvider>
+          <QueryProvider>
+            <AISidebarProvider>
+              {children}
+              <SignedIn>
+                <EmailAgent />
+                <ClerkSignedInComponent />
+              </SignedIn>
+            </AISidebarProvider>
+          </QueryProvider>
         </body>
       </html>
     </ClerkProvider>
