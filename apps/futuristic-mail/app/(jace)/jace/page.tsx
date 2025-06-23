@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Link, AtSign, Paperclip, Check, X, Edit, Trash2, Plus } from 'lucide-react';
+import { Calendar, Link, AtSign, Plus } from 'lucide-react';
 import RuleCard from '@/components/RuleCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
