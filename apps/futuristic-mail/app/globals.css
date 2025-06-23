@@ -42,6 +42,22 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --email-text-default: rgba(255,255,255,0.56);
+  --email-text-muted: #646464;
+  --email-text-highlighted: rgba(255,255,255,0.88);
+}
+
+.max-w-inbox {
+  max-width: 60rem;
+}
+.text-email-text {
+  color: var(--email-text-default);
+}
+.text-email-text-muted {
+  color: var(--email-text-muted);
+}
+.text-email-text-highlighted {
+  color: var(--email-text-highlighted);
 }
 
 @theme inline {
@@ -50,8 +66,8 @@
   --input-background-default: #282828;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --text-xs: 0.5625rem;
-  --text-sm: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
   --text-md: 0.9125rem;
   --text-lg: 1rem;
   --text-2xl: 1.5rem;
