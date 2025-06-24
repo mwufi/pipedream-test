@@ -19,6 +19,7 @@ export async function GET(request: Request) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const category = searchParams.get("category");
+    const label = searchParams.get("label");
     const includeStats = searchParams.get("stats") === "true";
     
     const offset = (page - 1) * limit;
@@ -44,8 +45,12 @@ export async function GET(request: Request) {
       filters.push(lte(emails.receivedAt, new Date(endDate)));
     }
     
-    if (category) {
+    if (category && category !== "all") {
       filters.push(eq(emails.category, category as any));
+    }
+    
+    if (label) {
+      filters.push(sql`${emails.labels}::jsonb @> ${JSON.stringify([label])}`);
     }
 
     // Get paginated emails
@@ -65,6 +70,19 @@ export async function GET(request: Request) {
 
     const totalCount = totalCountResult[0].count;
     const totalPages = Math.ceil(totalCount / limit);
+
+    // Get all unique labels for the user
+    const labelsResult = await db
+      .select({
+        labels: sql`DISTINCT jsonb_array_elements_text(${emails.labels}::jsonb)`
+      })
+      .from(emails)
+      .where(eq(emails.userId, userId));
+    
+    const uniqueLabels = labelsResult
+      .map(row => row.labels)
+      .filter(Boolean)
+      .sort();
 
     // Get stats if requested
     let stats = null;
@@ -138,6 +156,7 @@ export async function GET(request: Request) {
         totalPages,
         hasMore: page < totalPages
       },
+      labels: uniqueLabels,
       stats
     });
   } catch (error) {

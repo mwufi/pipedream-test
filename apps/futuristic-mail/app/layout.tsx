@@ -54,7 +54,7 @@ export default function RootLayout({
             <AISidebarProvider>
               {children}
               <SignedIn>
-                <EmailAgent />
+                {/* <EmailAgent /> */}
                 <ClerkSignedInComponent />
               </SignedIn>
             </AISidebarProvider>
