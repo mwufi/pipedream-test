@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -153,6 +154,7 @@ function EmailSidebar({ selectedCategory, onCategoryChange, selectedLabel, onLab
 
 // Emails View with ThreadGroup
 function EmailsView() {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -212,7 +214,7 @@ function EmailsView() {
       />
 
       <div className="flex-1 flex flex-col">
-        <SearchBar 
+        <SearchBar
           placeholder="Search or ask Jace a question"
           value={search}
           onChange={setSearch}
@@ -260,7 +262,7 @@ function EmailsView() {
                     key={month}
                     title={month}
                     threads={emails}
-                    onThreadClick={(id) => console.log("Email clicked:", id)}
+                    onThreadClick={(id) => router.push(`/debug/email/${id}`)}
                   />
                 ))}
               </div>
@@ -330,7 +332,7 @@ function ContactsView() {
 
   return (
     <div className="flex flex-col h-full">
-      <SearchBar 
+      <SearchBar
         placeholder="Search contacts by name, email, company..."
         value={search}
         onChange={setSearch}
@@ -339,48 +341,48 @@ function ContactsView() {
       <ScrollArea className="flex-1">
         <div className="p-6">
           <div className="bg-white/5 rounded-lg border border-white/10">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-white/10">
-                <TableHead className="text-gray-400">Name</TableHead>
-                <TableHead className="text-gray-400">Email</TableHead>
-                <TableHead className="text-gray-400">Company</TableHead>
-                <TableHead className="text-gray-400">Relationship</TableHead>
-                <TableHead className="text-gray-400">Interactions</TableHead>
-                <TableHead className="text-gray-400">Source</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredContacts?.map((contact: any) => (
-                <TableRow key={contact.id} className="border-white/10">
-                  <TableCell className="font-medium">
-                    {contact.name || `${contact.firstName || ""} ${contact.lastName || ""}`.trim() || contact.email}
-                  </TableCell>
-                  <TableCell className="text-gray-400">{contact.email}</TableCell>
-                  <TableCell>
-                    <div>{contact.company}</div>
-                    {contact.jobTitle && (
-                      <div className="text-xs text-gray-500">{contact.jobTitle}</div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="w-20 bg-white/10 rounded-full h-2">
-                      <div
-                        className="bg-blue-500 h-2 rounded-full"
-                        style={{ width: `${contact.relationshipStrength || 0}%` }}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">{contact.interactionCount || 0}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-xs border-white/20">
-                      {contact.source || "unknown"}
-                    </Badge>
-                  </TableCell>
+            <Table>
+              <TableHeader>
+                <TableRow className="border-white/10">
+                  <TableHead className="text-gray-400">Name</TableHead>
+                  <TableHead className="text-gray-400">Email</TableHead>
+                  <TableHead className="text-gray-400">Company</TableHead>
+                  <TableHead className="text-gray-400">Relationship</TableHead>
+                  <TableHead className="text-gray-400">Interactions</TableHead>
+                  <TableHead className="text-gray-400">Source</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredContacts?.map((contact: any) => (
+                  <TableRow key={contact.id} className="border-white/10">
+                    <TableCell className="font-medium">
+                      {contact.name || `${contact.firstName || ""} ${contact.lastName || ""}`.trim() || contact.email}
+                    </TableCell>
+                    <TableCell className="text-gray-400">{contact.email}</TableCell>
+                    <TableCell>
+                      <div>{contact.company}</div>
+                      {contact.jobTitle && (
+                        <div className="text-xs text-gray-500">{contact.jobTitle}</div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="w-20 bg-white/10 rounded-full h-2">
+                        <div
+                          className="bg-blue-500 h-2 rounded-full"
+                          style={{ width: `${contact.relationshipStrength || 0}%` }}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">{contact.interactionCount || 0}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs border-white/20">
+                        {contact.source || "unknown"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </div>
       </ScrollArea>
@@ -418,7 +420,7 @@ function EventsView() {
 
   return (
     <div className="flex flex-col h-full">
-      <SearchBar 
+      <SearchBar
         placeholder="Search events by title, location, organizer..."
         value={search}
         onChange={setSearch}
@@ -427,53 +429,53 @@ function EventsView() {
       <ScrollArea className="flex-1">
         <div className="p-6">
           <div className="bg-white/5 rounded-lg border border-white/10">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-white/10">
-                <TableHead className="text-gray-400">Title</TableHead>
-                <TableHead className="text-gray-400">Date & Time</TableHead>
-                <TableHead className="text-gray-400">Location</TableHead>
-                <TableHead className="text-gray-400">Organizer</TableHead>
-                <TableHead className="text-gray-400">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEvents?.map((event: any) => (
-                <TableRow key={event.id} className="border-white/10">
-                  <TableCell className="font-medium">
-                    <div>{event.title}</div>
-                    {event.description && (
-                      <div className="text-xs text-gray-500 truncate max-w-[300px]">
-                        {event.description}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div>{format(new Date(event.startTime), "MMM d, yyyy")}</div>
-                    <div className="text-xs text-gray-500">
-                      {format(new Date(event.startTime), "HH:mm")} - {format(new Date(event.endTime), "HH:mm")}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {event.location || "-"}
-                    {event.meetingUrl && <Badge variant="secondary" className="ml-2 text-xs">Virtual</Badge>}
-                  </TableCell>
-                  <TableCell className="text-gray-400">
-                    {event.organizer?.name || event.organizer?.email || "-"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={event.status === "cancelled" ? "destructive" : "default"}
-                      className="text-xs"
-                    >
-                      {event.status || "confirmed"}
-                    </Badge>
-                    {event.isRecurring && <Badge variant="outline" className="ml-1 text-xs">↻</Badge>}
-                  </TableCell>
+            <Table>
+              <TableHeader>
+                <TableRow className="border-white/10">
+                  <TableHead className="text-gray-400">Title</TableHead>
+                  <TableHead className="text-gray-400">Date & Time</TableHead>
+                  <TableHead className="text-gray-400">Location</TableHead>
+                  <TableHead className="text-gray-400">Organizer</TableHead>
+                  <TableHead className="text-gray-400">Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredEvents?.map((event: any) => (
+                  <TableRow key={event.id} className="border-white/10">
+                    <TableCell className="font-medium">
+                      <div>{event.title}</div>
+                      {event.description && (
+                        <div className="text-xs text-gray-500 truncate max-w-[300px]">
+                          {event.description}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div>{format(new Date(event.startTime), "MMM d, yyyy")}</div>
+                      <div className="text-xs text-gray-500">
+                        {format(new Date(event.startTime), "HH:mm")} - {format(new Date(event.endTime), "HH:mm")}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {event.location || "-"}
+                      {event.meetingUrl && <Badge variant="secondary" className="ml-2 text-xs">Virtual</Badge>}
+                    </TableCell>
+                    <TableCell className="text-gray-400">
+                      {event.organizer?.name || event.organizer?.email || "-"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={event.status === "cancelled" ? "destructive" : "default"}
+                        className="text-xs"
+                      >
+                        {event.status || "confirmed"}
+                      </Badge>
+                      {event.isRecurring && <Badge variant="outline" className="ml-1 text-xs">↻</Badge>}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </div>
       </ScrollArea>

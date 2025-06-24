@@ -143,6 +143,10 @@ div[data-color-mode="dark"] {
   color: var(--text-body-color-inverted);
 }
 
+.max-w-none {
+  max-width: none;
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
