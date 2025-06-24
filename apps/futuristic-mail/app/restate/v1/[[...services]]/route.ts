@@ -1,7 +1,6 @@
 import * as restate from "@restatedev/restate-sdk/fetch";
 import helloService from "./helloService";
 import enrichService from "./enrichService";
-import { gmailInboxObject, gmailProcessor } from "./syncing/inboxService";
 import { apiService } from "./apiService";
 import { limiter } from "./ratelimit/limiter";
 
@@ -9,8 +8,6 @@ const services = restate
   .endpoint()
   .bind(helloService)
   .bind(enrichService)
-  .bind(gmailInboxObject)
-  .bind(gmailProcessor)
   .bind(apiService)
   .bind(limiter)
   .handler();
