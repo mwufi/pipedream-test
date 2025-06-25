@@ -25,5 +25,15 @@ const helloService = restate.service({
     }
 });
 
+export const helloWorkflow = restate.workflow({
+    name: "helloWorkflow",
+    handlers: {
+        run: async (ctx: restate.Context) => {
+            await ctx.sleep(20000);
+            return "hello!";
+        }
+    }
+});
+
 // Export the service
 export default helloService;

@@ -66,6 +66,7 @@
         "@radix-ui/react-tooltip": "^1.2.7",
         "@repo/sync-helpers": "*",
         "@restatedev/restate-sdk": "^1.6.1",
+        "@restatedev/restate-sdk-clients": "^1.6.1",
         "@tabler/icons-react": "^3.34.0",
         "@tanstack/react-query": "^5.81.2",
         "@tanstack/react-table": "^8.21.3",
@@ -1048,6 +1049,8 @@
     "@repo/ui": ["@repo/ui@workspace:packages/ui"],
 
     "@restatedev/restate-sdk": ["@restatedev/restate-sdk@1.6.1", "", { "dependencies": { "@restatedev/restate-sdk-core": "^1.6.1" } }, "sha512-UePOQmEXOOrGJaCnDF6IGT9pafocY354ovPpsaT3048o3FuHGURYIQ2R9eoj9tJPbF8W8RuKwHFyFIuDKVhyXA=="],
+
+    "@restatedev/restate-sdk-clients": ["@restatedev/restate-sdk-clients@1.6.1", "", { "dependencies": { "@restatedev/restate-sdk-core": "^1.6.1" } }, "sha512-yV3yprBpMm2GTcDwW1jWRg41vKWwHMgCd1ezzTEraTWv/A4W/3F7AXm4zen6ea657bmdIpf9a6+bf9tLbMCS7w=="],
 
     "@restatedev/restate-sdk-core": ["@restatedev/restate-sdk-core@1.6.1", "", {}, "sha512-0rjLVNg1qBSraVHzsDKaTztcVAVcZDnGUmhz+AStYJ9wGRnnGfDtfquCRf/hxjMmdDZhJmV0wcslKQRdO/UUhw=="],
 

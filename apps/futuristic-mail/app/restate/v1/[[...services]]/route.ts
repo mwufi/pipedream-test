@@ -1,8 +1,8 @@
 import * as restate from "@restatedev/restate-sdk/fetch";
-import helloService from "./helloService";
-import enrichService from "./enrichService";
-import { apiService } from "./apiService";
-import { limiter } from "./ratelimit/limiter";
+import helloService, { helloWorkflow } from "../../../../restate-services/helloService";
+import enrichService from "../../../../restate-services/enrichService";
+import { apiService } from "../../../../restate-services/apiService";
+import { limiter } from "../../../../restate-services/ratelimit/limiter";
 
 const services = restate
   .endpoint()
@@ -10,6 +10,7 @@ const services = restate
   .bind(enrichService)
   .bind(apiService)
   .bind(limiter)
+  .bind(helloWorkflow)
   .handler();
 
 export function GET(request: Request) {
