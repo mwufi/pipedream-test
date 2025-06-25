@@ -1,0 +1,11 @@
+{
+    "name": "@repo/email-intelligence",
+    "version": "0.0.0",
+    "private": true,
+    "license": "MIT",
+    "dependencies": {
+      "@openai/agents": "^0.0.9",
+      "@repo/agents": "workspace:*"
+    }
+  }
+  
