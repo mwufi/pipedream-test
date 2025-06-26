@@ -83,6 +83,8 @@ div[data-color-mode="dark"] {
   --spacing-lg: 1.25rem;
   --spacing-xl: 1.5rem;
   --spacing-2xl: 2rem; */
+  --spacing-2: 0.5rem;
+  --spacing-4: 1rem;
   --spacing-search: 60rem;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
