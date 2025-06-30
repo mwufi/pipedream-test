@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useUser } from "@clerk/nextjs"
 import {
   AudioWaveform,
   BookOpen,
@@ -28,27 +29,12 @@ import {
 
 // This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   teams: [
     {
-      name: "Zen's Inbox",
+      name: "Overview",
       logo: GalleryVerticalEnd,
-      plan: "Free",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
+      plan: "Beta",
+    }
   ],
   navMain: [
     {
@@ -69,15 +55,6 @@ const data = {
           title: "Personalization",
           url: "#",
         },
-      ],
-      addActions: [
-        {
-          label: "Add new section",
-          action: () => {
-            console.log("Adding new section to Your Journey")
-            // Add your logic here
-          }
-        }
       ]
     },
     {
@@ -136,6 +113,20 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useUser()
+
+  const userData = user
+    ? {
+        name: user.fullName || "Anonymous",
+        email: user.primaryEmailAddress?.emailAddress || "",
+        avatar: user.imageUrl || "",
+      }
+    : {
+        name: "Anonymous",
+        email: "",
+        avatar: "",
+      }
+
   return (
     <Sidebar collapsible="icon" variant="inset" {...props}>
       <SidebarHeader>
@@ -143,10 +134,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

@@ -61,10 +61,14 @@ export function NavMain({
             <SidebarMenuItem>
               <div className="flex items-center">
                 <CollapsibleTrigger asChild className="flex-1">
-                  <SidebarMenuButton tooltip={item.title}>
-                    {item.icon && <item.icon />}
+                  <SidebarMenuButton tooltip={item.title} className="group/button">
+                    <div className="relative">
+                      {item.icon && (
+                        <item.icon className="transition-opacity duration-200 group-hover/button:opacity-0" />
+                      )}
+                      <ChevronRight className="absolute inset-0 opacity-0 transition-all duration-200 group-hover/button:opacity-100 group-data-[state=open]/collapsible:rotate-90" />
+                    </div>
                     <span>{item.title}</span>
-                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 {item.addActions && item.addActions.length > 0 && (
