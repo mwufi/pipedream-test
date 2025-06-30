@@ -35,9 +35,9 @@ const data = {
   },
   teams: [
     {
-      name: "Zen's Inbox",
+      name: "Acme Inc",
       logo: GalleryVerticalEnd,
-      plan: "Free",
+      plan: "Enterprise",
     },
     {
       name: "Acme Corp.",
@@ -52,69 +52,90 @@ const data = {
   ],
   navMain: [
     {
-      title: "Your Journey",
+      title: "Playground",
       url: "#",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "Stats",
+          title: "History",
           url: "#",
         },
         {
-          title: "Activity",
+          title: "Starred",
           url: "#",
         },
         {
-          title: "Personalization",
+          title: "Settings",
           url: "#",
         },
       ],
-      addActions: [
-        {
-          label: "Add new section",
-          action: () => {
-            console.log("Adding new section to Your Journey")
-            // Add your logic here
-          }
-        }
-      ]
     },
     {
-      title: "Inbox Agents",
+      title: "Models",
       url: "#",
       icon: Bot,
       items: [
         {
-          title: "Reply Agent",
+          title: "Genesis",
           url: "#",
         },
         {
-          title: "Categorize",
+          title: "Explorer",
           url: "#",
         },
         {
-          title: "Summarize Agent",
+          title: "Quantum",
           url: "#",
-        }
+        },
       ],
-      addActions: [
+    },
+    {
+      title: "Documentation",
+      url: "#",
+      icon: BookOpen,
+      items: [
         {
-          label: "Add new agent",
-          action: () => {
-            console.log("Adding new agent to Inbox Agents")
-            // Add your logic here to create a new agent
-          }
+          title: "Introduction",
+          url: "#",
         },
         {
-          label: "Import agent",
-          action: () => {
-            console.log("Importing agent")
-            // Add your logic here to import an agent
-          }
-        }
-      ]
-    }
+          title: "Get Started",
+          url: "#",
+        },
+        {
+          title: "Tutorials",
+          url: "#",
+        },
+        {
+          title: "Changelog",
+          url: "#",
+        },
+      ],
+    },
+    {
+      title: "Settings",
+      url: "#",
+      icon: Settings2,
+      items: [
+        {
+          title: "General",
+          url: "#",
+        },
+        {
+          title: "Team",
+          url: "#",
+        },
+        {
+          title: "Billing",
+          url: "#",
+        },
+        {
+          title: "Limits",
+          url: "#",
+        },
+      ],
+    },
   ],
   projects: [
     {
@@ -137,7 +158,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar collapsible="icon" variant="inset" {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>

@@ -1,0 +1,529 @@
+🔍 Extracting email participants with engagement analysis...
+
+Query: select "email" from "accounts" "accounts"
+👤 User emails: ztang230@gmail.com, zen tang, ztang230@gmail.com
+
+Query: select "id", "thread_id", "from", "to", "cc", "bcc", "category", "is_important", "is_starred", "is_read", "sent_at" from "emails" "emails"
+📧 Found 1128 emails
+
+📤 User sent 19 emails out of 1128 total
+
+🔍 DEBUG MODE - Showing email details:
+
+Scoring Configuration:
+{
+  "starred": 7,
+  "important": 5,
+  "read": 6,
+  "unread": -2,
+  "spam": -5,
+  "sentByUser": 10,
+  "directReply": 10,
+  "inConversation": 8,
+  "anyInteraction": 1,
+  "engagementRatioMultiplier": 35,
+  "recency": {
+    "within7Days": 7,
+    "within30Days": 5,
+    "within90Days": -2,
+    "other": -10
+  }
+}
+
+====================================================================================================
+
+📧 zen@ara.computer> (zen@ara.computer)
+   Score: 254.5 | Category: high-engagement
+   Days since contact: 17
+
+   Raw Features:
+   - Total emails: 14 (14 points)
+   - Sent to me: 2
+   - Sent by user: 11 (110 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 10 (20 points)
+   - Starred: 0 (0 points)
+   - Important: 2 (10 points)
+   - Read: 12 (72 points)
+   - Unread: 2 (-4 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 78.6% (27.5 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 rahul.vohra@superhuman.com> (Rahul Vohra)
+   Score: 191 | Category: high-engagement
+   Days since contact: 6
+
+   Raw Features:
+   - Total emails: 26 (26 points)
+   - Sent to me: 26
+   - Sent by user: 0 (0 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 0 (0 points)
+   - Starred: 0 (0 points)
+   - Important: 26 (130 points)
+   - Read: 10 (60 points)
+   - Unread: 16 (-32 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 7 points
+   - Engagement ratio: 0.0% (0.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 chanavis@stanford.edu> (Avis Chan)
+   Score: 124 | Category: high-engagement
+   Days since contact: 26
+
+   Raw Features:
+   - Total emails: 14 (14 points)
+   - Sent to me: 14
+   - Sent by user: 0 (0 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 2 (4 points)
+   - Starred: 0 (0 points)
+   - Important: 13 (65 points)
+   - Read: 8 (48 points)
+   - Unread: 6 (-12 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 0.0% (0.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 alex@january.capital> (Alex Rankin)
+   Score: 110 | Category: high-engagement
+   Days since contact: 15
+
+   Raw Features:
+   - Total emails: 3 (3 points)
+   - Sent to me: 1
+   - Sent by user: 2 (20 points)
+   - Direct replies from user: 1 (10 points)
+   - Replied to (threads): 1 (8 points)
+   - In conversations: 3 (6 points)
+   - Starred: 0 (0 points)
+   - Important: 1 (5 points)
+   - Read: 3 (18 points)
+   - Unread: 0 (0 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 100.0% (35.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 no-reply@accounts.google.com> (Google)
+   Score: 87 | Category: high-engagement
+   Days since contact: 5
+
+   Raw Features:
+   - Total emails: 40 (40 points)
+   - Sent to me: 40
+   - Sent by user: 0 (0 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 32 (64 points)
+   - Starred: 0 (0 points)
+   - Important: 0 (0 points)
+   - Read: 7 (42 points)
+   - Unread: 33 (-66 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 7 points
+   - Engagement ratio: 0.0% (0.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 info@transactional.getden.io> (Den)
+   Score: 73 | Category: high-engagement
+   Days since contact: 6
+
+   Raw Features:
+   - Total emails: 7 (7 points)
+   - Sent to me: 7
+   - Sent by user: 0 (0 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 0 (0 points)
+   - Starred: 0 (0 points)
+   - Important: 5 (25 points)
+   - Read: 6 (36 points)
+   - Unread: 1 (-2 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 7 points
+   - Engagement ratio: 0.0% (0.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 support@nordaccount.com> (Support)
+   Score: 66.88888888888889 | Category: high-engagement
+   Days since contact: 22
+
+   Raw Features:
+   - Total emails: 9 (9 points)
+   - Sent to me: 8
+   - Sent by user: 1 (10 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 0 (0 points)
+   - Starred: 0 (0 points)
+   - Important: 5 (25 points)
+   - Read: 4 (24 points)
+   - Unread: 5 (-10 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 11.1% (3.9 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 limxlmichelle@gmail.com (No name)
+   Score: 59 | Category: high-engagement
+   Days since contact: 5
+
+   Raw Features:
+   - Total emails: 1 (1 points)
+   - Sent to me: 0
+   - Sent by user: 1 (10 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 0 (0 points)
+   - Starred: 0 (0 points)
+   - Important: 0 (0 points)
+   - Read: 1 (6 points)
+   - Unread: 0 (0 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 7 points
+   - Engagement ratio: 100.0% (35.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 emkgpesmmytkc9w@upload.pipedream.net (No name)
+   Score: 57 | Category: high-engagement
+   Days since contact: 12
+
+   Raw Features:
+   - Total emails: 1 (1 points)
+   - Sent to me: 0
+   - Sent by user: 1 (10 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 0 (0 points)
+   - Starred: 0 (0 points)
+   - Important: 0 (0 points)
+   - Read: 1 (6 points)
+   - Unread: 0 (0 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 100.0% (35.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 test@example.com (No name)
+   Score: 57 | Category: high-engagement
+   Days since contact: 24
+
+   Raw Features:
+   - Total emails: 1 (1 points)
+   - Sent to me: 0
+   - Sent by user: 1 (10 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 0 (0 points)
+   - Starred: 0 (0 points)
+   - Important: 0 (0 points)
+   - Read: 1 (6 points)
+   - Unread: 0 (0 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 100.0% (35.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 tangzen@gmail.com (No name)
+   Score: 57 | Category: high-engagement
+   Days since contact: 24
+
+   Raw Features:
+   - Total emails: 1 (1 points)
+   - Sent to me: 0
+   - Sent by user: 1 (10 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 0 (0 points)
+   - Starred: 0 (0 points)
+   - Important: 0 (0 points)
+   - Read: 1 (6 points)
+   - Unread: 0 (0 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 100.0% (35.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 maxbrantley@arktimes.com> (Max Brantley)
+   Score: 53.5 | Category: high-engagement
+   Days since contact: 3724
+
+   Raw Features:
+   - Total emails: 2 (2 points)
+   - Sent to me: 1
+   - Sent by user: 1 (10 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 1 (8 points)
+   - In conversations: 2 (4 points)
+   - Starred: 0 (0 points)
+   - Important: 2 (10 points)
+   - Read: 2 (12 points)
+   - Unread: 0 (0 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: -10 points
+   - Engagement ratio: 50.0% (17.5 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 no-reply-aws@amazon.com> (Amazon Web Services, Inc.)
+   Score: 53 | Category: high-engagement
+   Days since contact: 24
+
+   Raw Features:
+   - Total emails: 6 (6 points)
+   - Sent to me: 6
+   - Sent by user: 0 (0 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 0 (0 points)
+   - Starred: 0 (0 points)
+   - Important: 6 (30 points)
+   - Read: 3 (18 points)
+   - Unread: 3 (-6 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 0.0% (0.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 notifications@mail.notion.so> (Notion Calendar)
+   Score: 45 | Category: high-engagement
+   Days since contact: 14
+
+   Raw Features:
+   - Total emails: 4 (4 points)
+   - Sent to me: 4
+   - Sent by user: 0 (0 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 0 (0 points)
+   - Starred: 0 (0 points)
+   - Important: 4 (20 points)
+   - Read: 3 (18 points)
+   - Unread: 1 (-2 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 0.0% (0.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 CloudPlatform-noreply@google.com> (Google Cloud)
+   Score: 36 | Category: high-engagement
+   Days since contact: 9
+
+   Raw Features:
+   - Total emails: 5 (5 points)
+   - Sent to me: 5
+   - Sent by user: 0 (0 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 0 (0 points)
+   - Starred: 0 (0 points)
+   - Important: 4 (20 points)
+   - Read: 2 (12 points)
+   - Unread: 3 (-6 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 0.0% (0.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 sharing@superhuman.com> (Sharing)
+   Score: 32 | Category: high-engagement
+   Days since contact: 36
+
+   Raw Features:
+   - Total emails: 2 (2 points)
+   - Sent to me: 2
+   - Sent by user: 0 (0 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 2 (16 points)
+   - In conversations: 2 (4 points)
+   - Starred: 0 (0 points)
+   - Important: 0 (0 points)
+   - Read: 2 (12 points)
+   - Unread: 0 (0 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: -2 points
+   - Engagement ratio: 0.0% (0.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 reminder@superhuman.com> (Reminder)
+   Score: 27 | Category: high-engagement
+   Days since contact: 13
+
+   Raw Features:
+   - Total emails: 1 (1 points)
+   - Sent to me: 1
+   - Sent by user: 0 (0 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 1 (8 points)
+   - In conversations: 1 (2 points)
+   - Starred: 0 (0 points)
+   - Important: 1 (5 points)
+   - Read: 1 (6 points)
+   - Unread: 0 (0 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 0.0% (0.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 notifications@stripe.com> (Stripe)
+   Score: 24 | Category: medium-engagement
+   Days since contact: 10
+
+   Raw Features:
+   - Total emails: 7 (7 points)
+   - Sent to me: 7
+   - Sent by user: 0 (0 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 0 (0 points)
+   - Starred: 0 (0 points)
+   - Important: 2 (10 points)
+   - Read: 2 (12 points)
+   - Unread: 5 (-10 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 0.0% (0.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 budgets@costalerts.amazonaws.com (No name)
+   Score: 24 | Category: medium-engagement
+   Days since contact: 11
+
+   Raw Features:
+   - Total emails: 2 (2 points)
+   - Sent to me: 2
+   - Sent by user: 0 (0 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 0 (0 points)
+   - Starred: 0 (0 points)
+   - Important: 1 (5 points)
+   - Read: 2 (12 points)
+   - Unread: 0 (0 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 0.0% (0.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+📧 nico@altera.al> (Nico Christie)
+   Score: 24 | Category: medium-engagement
+   Days since contact: 20
+
+   Raw Features:
+   - Total emails: 2 (2 points)
+   - Sent to me: 2
+   - Sent by user: 0 (0 points)
+   - Direct replies from user: 0 (0 points)
+   - Replied to (threads): 0 (0 points)
+   - In conversations: 0 (0 points)
+   - Starred: 0 (0 points)
+   - Important: 1 (5 points)
+   - Read: 2 (12 points)
+   - Unread: 0 (0 points)
+   - Spam: 0 (0 points)
+   - Recency bonus: 5 points
+   - Engagement ratio: 0.0% (0.0 points)
+
+----------------------------------------------------------------------------------------------------
+
+... and 572 more participants
+
+====================================================================================================
+
+👥 Found 592 unique participants:
+
+
+🔥 HIGH ENGAGEMENT (People you actively communicate with) (17 contacts)
+================================================================================
+Name                     Email                         Score Reply Days Total
+--------------------------------------------------------------------------------
+zen@ara.computer         zen@ara.computer>             254.5 0    17   14
+Rahul Vohra              rahul.vohra@superhuman.com>   191   0    6    26
+Avis Chan                chanavis@stanford.edu>        124   0    26   14
+Alex Rankin              alex@january.capital>         110   1    15   3
+Google                   no-reply@accounts.google....  87    0    5    40
+Den                      info@transactional.getden...  73    0    6    7
+Support                  support@nordaccount.com>      66.888888888888890    22   9
+Unknown                  limxlmichelle@gmail.com       59    0    5    1
+Unknown                  emkgpesmmytkc9w@upload.pi...  57    0    12   1
+Unknown                  test@example.com              57    0    24   1
+Unknown                  tangzen@gmail.com             57    0    24   1
+Max Brantley             maxbrantley@arktimes.com>     53.5  0    3724 2
+Amazon Web Services,...  no-reply-aws@amazon.com>      53    0    24   6
+Notion Calendar          notifications@mail.notion...  45    0    14   4
+Google Cloud             CloudPlatform-noreply@goo...  36    0    9    5
+... and 2 more
+
+💬 MEDIUM ENGAGEMENT (Important but less active) (534 contacts)
+================================================================================
+Name                     Email                         Score Reply Days Total
+--------------------------------------------------------------------------------
+Stripe                   notifications@stripe.com>     24    0    10   7
+Unknown                  budgets@costalerts.amazon...  24    0    11   2
+Nico Christie            nico@altera.al>               24    0    20   2
+Microsoft account team   account-security-noreply@...  21    0    17   2
+Katie Gao                Katiegao101@gmail.com>        19    0    28   2
+Squarespace              no-reply@squarespace.com>     18    0    14   3
+Unknown                  no-reply@account.diabrows...  17    0    15   1
+The NordVPN team         support@mail.nordvpn.com>     16    0    14   2
+ElevenLabs Team          no-reply@contact.elevenla...  14    0    10   4
+LlamaIndex               marketing@llamaindex.ai>      14    0    6    1
+Unknown                  noreply-cloudshell@google...  14    0    6    1
+Lunch Money              hello@lunchmoney.app>         13    0    6    2
+Kalshi                   no-reply@kalshi.com>          12    0    8    1
+Twilio                   no-reply@twilio.com>          12    0    8    1
+Exafunction, Inc.        invoice+statements+acct_1...  12    0    14   1
+... and 519 more
+
+📧 LOW ENGAGEMENT (Mostly one-way communication) (41 contacts)
+================================================================================
+Name                     Email                         Score Reply Days Total
+--------------------------------------------------------------------------------
+Aiden Bai                aiden@same.new>               12    0    32   2
+Joe at PostHog           joe@posthog.com>              5     0    30   1
+SST                      auth@console.sst.dev>         5     0    31   1
+Anthropic                no-reply-ndhuYH7grkG9pUar...  5     0    33   1
+Ben Huffman              hello@contra.com>             5     0    36   1
+Lark Team                support@service.larksuite...  5     0    37   1
+Avis Chan (Google Docs)  comments-noreply@docs.goo...  5     0    37   1
+Tokyo Adult Guide        tagpostmaster@tokyoadultg...  4     0    30   2
+SAPPE NYC                Sappe@email.sevenrooms.com>   0     0    30   1
+Doug O'Laughlin from...  mule@substack.com>            0     0    30   1
+Aiden from Same.new      support@same.new>             0     0    30   1
+Amazon Route 53          noreply@registrar.amazon>     0     0    31   1
+Cloudflare               noreply@notify.cloudflare...  0     0    31   1
+WHOOP                    no-reply@notifications.wh...  0     0    32   2
+Anthropic, PBC           invoice+statements@mail.a...  0     0    33   1
+... and 26 more
+
+✅ Analysis complete! Found 592 unique participants.
+🔥 17 high-engagement contacts
+💬 534 medium-engagement contacts
+📧 41 low-engagement contacts
+🚫 0 likely spam contacts
