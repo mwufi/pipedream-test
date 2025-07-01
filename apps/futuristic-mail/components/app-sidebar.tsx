@@ -64,7 +64,7 @@ const data = {
       items: [
         {
           title: "Reply Agent",
-          url: "#",
+          url: "/v2/reply-agent",
         },
         {
           title: "Categorize",
@@ -139,7 +139,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <NavUser user={userData} />
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   )
 }
