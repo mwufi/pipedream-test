@@ -195,13 +195,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             ) : (
                               <Hash className="h-3 w-3" />
                             )}
-                            <span className="text-sm">{channel.name}</span>
-                          </div>
-                          {channel.unreadCount > 0 && (
-                            <span className="ml-auto flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                              {channel.unreadCount}
+                            <span className={`text-sm ${channel.unreadCount > 0 ? 'font-bold' : ''}`}>
+                              {channel.name}
                             </span>
-                          )}
+                          </div>
                         </a>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -244,13 +241,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                 <div className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-green-500 ring-1 ring-white" />
                               )}
                             </div>
-                            <span className="text-sm">{dm.name}</span>
-                          </div>
-                          {dm.unreadCount > 0 && (
-                            <span className="ml-auto flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                              {dm.unreadCount}
+                            <span className={`text-sm ${dm.unreadCount > 0 ? 'font-bold' : ''}`}>
+                              {dm.name}
                             </span>
-                          )}
+                          </div>
                         </a>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -288,13 +282,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <a href={app.url} className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <app.icon className="h-4 w-4" />
-                            <span className="text-sm">{app.name}</span>
-                          </div>
-                          {app.unreadCount > 0 && (
-                            <span className="ml-auto flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-xs text-white">
-                              {app.unreadCount}
+                            <span className={`text-sm ${app.unreadCount > 0 ? 'font-bold' : ''}`}>
+                              {app.name}
                             </span>
-                          )}
+                          </div>
                         </a>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
