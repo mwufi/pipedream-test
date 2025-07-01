@@ -147,29 +147,76 @@ export default function ReplyAgentPage() {
     const [testResults, setTestResults] = useState<any[]>([]);
     const [isRunning, setIsRunning] = useState(false);
     const [activeTab, setActiveTab] = useState("rules");
+    const [showTestPanel, setShowTestPanel] = useState(false);
 
     // Generate system prompt from rules
     const generateSystemPrompt = () => {
         const activeRules = rules.filter(rule => rule.isActive);
-        const rulesText = activeRules.map((rule, index) =>
-            `${index + 1}. When ${rule.condition.toLowerCase()}, then ${rule.action.toLowerCase()}`
-        ).join('\n');
+
+        // Group rules by category
+        const rulesByCategory: Record<string, Rule[]> = {};
+        activeRules.forEach(rule => {
+            if (!rulesByCategory[rule.category]) {
+                rulesByCategory[rule.category] = [];
+            }
+            rulesByCategory[rule.category].push(rule);
+        });
+
+        // Generate detailed rules text
+        let rulesText = "";
+        Object.entries(rulesByCategory).forEach(([category, categoryRules]) => {
+            const categoryName = category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            rulesText += `\n## ${categoryName} Rules\n`;
+
+            categoryRules.forEach((rule, index) => {
+                rulesText += `\n${index + 1}. **${rule.name}**\n`;
+                rulesText += `   - When: ${rule.condition}\n`;
+                rulesText += `   - Then: ${rule.action}\n`;
+                if (rule.usage) {
+                    rulesText += `   - Usage: ${rule.usage}\n`;
+                }
+                if (rule.successRate) {
+                    rulesText += `   - Success Rate: ${rule.successRate}%\n`;
+                }
+                rulesText += "\n";
+            });
+        });
 
         return `You are an intelligent email assistant. Your role is to help categorize, prioritize, and suggest responses to incoming emails.
 
-Follow these rules when processing emails:
+## Your Configuration
+
+**Available Integrations:** ${selectedTools.join(', ')}
+
+**Active Rules:** ${activeRules.length} rules across ${Object.keys(rulesByCategory).length} categories
 ${rulesText}
 
-Available integrations: ${selectedTools.join(', ')}
+## Core Responsibilities
 
-Key responsibilities:
-1. Apply the rules above in order of priority
-2. Categorize emails appropriately 
-3. Assess urgency and priority levels
-4. Generate contextually appropriate responses
-5. Flag emails requiring immediate attention
+1. **Rule Application**: Apply the rules above in order of priority and category
+2. **Email Categorization**: Automatically categorize emails based on content and sender
+3. **Priority Assessment**: Assess urgency and priority levels using the defined criteria
+4. **Response Generation**: Generate contextually appropriate responses following tone guidelines
+5. **Escalation**: Flag emails requiring immediate human attention based on escalation rules
+6. **Integration Usage**: Leverage available integrations (${selectedTools.join(', ')}) as needed
 
-Always maintain professionalism while being helpful and efficient.`;
+## Behavior Guidelines
+
+- Always maintain professionalism while being helpful and efficient
+- Apply rules in the order they appear within each category
+- When multiple rules could apply, prioritize by category: Priority & Urgency > Response Timing > Escalation > Categorization > Tone & Style > Automation
+- If no specific rule applies, use general professional communication standards
+- Learn from user corrections and feedback when Learning Mode is enabled
+
+## Output Format
+
+For each email, provide:
+1. **Category**: The email type/category
+2. **Priority**: urgent/high/medium/low based on rules
+3. **Triggered Rules**: Which rules were applied
+4. **Recommended Action**: What action to take
+5. **Response Template**: Suggested response if applicable
+6. **Confidence**: Your confidence level (0-100%)`;
     };
 
     const handleToolToggle = (toolId: string) => {
@@ -183,6 +230,7 @@ Always maintain professionalism while being helpful and efficient.`;
     const runTest = async () => {
         setIsRunning(true);
         setTestResults([]);
+        setShowTestPanel(true);
 
         // Simulate AI processing with realistic results
         for (let i = 0; i < dummyEmails.length; i++) {
@@ -280,7 +328,7 @@ Always maintain professionalism while being helpful and efficient.`;
             <SidebarInset>
                 <div className="flex h-full bg-gradient-to-br from-slate-50 to-blue-50/30">
                     {/* Main Configuration Panel */}
-                    <div className="flex-1">
+                    <div className={`transition-all duration-300 ${showTestPanel ? 'flex-1' : 'w-full'}`}>
                         <ScrollArea className="h-full">
                             <div className="max-w-6xl mx-auto px-8 py-8">
                                 {/* Enhanced Header */}
@@ -327,6 +375,32 @@ Always maintain professionalism while being helpful and efficient.`;
                                     </TabsList>
 
                                     <TabsContent value="rules">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div>
+                                                <h3 className="text-lg font-medium text-slate-900">Configure Rules & Logic</h3>
+                                                <p className="text-slate-600">Define how your AI assistant handles different types of emails</p>
+                                            </div>
+                                            <Button
+                                                onClick={() => {
+                                                    setShowTestPanel(true);
+                                                    runTest();
+                                                }}
+                                                disabled={isRunning}
+                                                className="bg-blue-600 hover:bg-blue-700"
+                                            >
+                                                {isRunning ? (
+                                                    <>
+                                                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                                                        Testing...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Play className="h-4 w-4 mr-2" />
+                                                        Test with Sample Emails
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </div>
                                         <RuleBuilder rules={rules} onRulesChange={setRules} />
                                     </TabsContent>
 
@@ -445,145 +519,157 @@ Always maintain professionalism while being helpful and efficient.`;
                         </ScrollArea>
                     </div>
 
-                    {/* Enhanced Test Section */}
-                    <div className="w-[420px] bg-white border-l border-slate-200 flex flex-col shadow-xl max-h-screen overflow-y-auto">
-                        <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-blue-600 rounded-lg">
-                                    <Play className="h-5 w-5 text-white" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-semibold text-slate-900">Live Testing</h2>
-                                    <p className="text-sm text-slate-600">See your agent in action</p>
-                                </div>
-                            </div>
-
-                            <Button
-                                onClick={runTest}
-                                disabled={isRunning}
-                                className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium shadow-lg"
-                            >
-                                {isRunning ? (
-                                    <>
-                                        <Clock className="h-5 w-5 mr-2 animate-spin" />
-                                        Processing Emails...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Play className="h-5 w-5 mr-2" />
-                                        Test with Sample Emails
-                                    </>
-                                )}
-                            </Button>
-                        </div>
-
-                        <ScrollArea className="flex-1">
-                            <div className="p-6 space-y-6">
-                                {dummyEmails.map((email, index) => {
-                                    const result = testResults.find(r => r.emailId === email.id);
-                                    const isProcessing = isRunning && !result && index <= testResults.length;
-
-                                    return (
-                                        <Card
-                                            key={email.id}
-                                            className={`transition-all duration-500 ${result ? 'shadow-md border-blue-200' : 'border-slate-200'
-                                                }`}
-                                        >
-                                            <CardHeader className="pb-3">
-                                                <div className="flex items-start justify-between mb-2">
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-semibold text-sm text-slate-900 truncate">{email.from}</p>
-                                                        <p className="text-xs text-slate-500">{email.timestamp}</p>
-                                                    </div>
-                                                    <div className={`w-3 h-3 rounded-full ${getPriorityColor(email.priority)}`} />
-                                                </div>
-
-                                                <h3 className="font-medium text-sm text-slate-900 leading-snug mb-2">{email.subject}</h3>
-                                                <p className="text-xs text-slate-600 leading-relaxed">{email.preview}</p>
-                                            </CardHeader>
-
-                                            <CardContent className="pt-0">
-                                                {isProcessing && (
-                                                    <div className="space-y-3">
-                                                        <div className="flex items-center gap-2 text-sm text-blue-600">
-                                                            <Clock className="h-4 w-4 animate-spin" />
-                                                            Analyzing...
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <div className="h-3 bg-slate-100 animate-pulse rounded" />
-                                                            <div className="h-3 bg-slate-100 animate-pulse rounded w-3/4" />
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {result && (
-                                                    <div className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-2">
-                                                        {/* Triggered Rules */}
-                                                        <div>
-                                                            <p className="text-xs font-medium text-slate-500 mb-2">TRIGGERED RULES</p>
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {result.analysis.triggeredRules.map((rule: string, i: number) => (
-                                                                    <Badge key={i} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                                                        {rule}
-                                                                    </Badge>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Analysis Results */}
-                                                        <div className="space-y-3">
-                                                            <div className="flex justify-between text-xs">
-                                                                <span className="text-slate-500">Priority:</span>
-                                                                <Badge variant="outline" className={`${email.priority === 'urgent' ? 'bg-red-50 text-red-700 border-red-200' :
-                                                                    email.priority === 'high' ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                                                                        email.priority === 'medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                                                                            'bg-green-50 text-green-700 border-green-200'
-                                                                    } capitalize`}>
-                                                                    {email.priority}
-                                                                </Badge>
-                                                            </div>
-
-                                                            <div className="flex justify-between text-xs">
-                                                                <span className="text-slate-500">Confidence:</span>
-                                                                <span className="font-medium">{result.analysis.confidence}%</span>
-                                                            </div>
-
-                                                            <div className="flex justify-between text-xs">
-                                                                <span className="text-slate-500">Response Time:</span>
-                                                                <span className="font-medium">{result.analysis.estimatedTime}</span>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Suggested Response */}
-                                                        <div>
-                                                            <p className="text-xs font-medium text-green-600 mb-2 flex items-center">
-                                                                <CheckCircle className="h-3 w-3 mr-1" />
-                                                                SUGGESTED RESPONSE
-                                                            </p>
-                                                            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                                                                <p className="text-xs text-green-800 leading-relaxed italic">
-                                                                    "{result.analysis.responseTemplate}"
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    );
-                                })}
-
-                                {!isRunning && testResults.length === 0 && (
-                                    <div className="text-center py-12">
-                                        <Bot className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                                        <p className="text-slate-500 text-sm">
-                                            Click "Test with Sample Emails" to see how your agent performs
-                                        </p>
+                    {/* Conditional Test Panel */}
+                    {showTestPanel && (
+                        <div className="w-[420px] bg-white border-l border-slate-200 flex flex-col shadow-xl max-h-screen overflow-y-auto animate-in slide-in-from-right duration-300">
+                            <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-blue-600 rounded-lg">
+                                            <Play className="h-5 w-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-semibold text-slate-900">Live Testing</h2>
+                                            <p className="text-sm text-slate-600">See your agent in action</p>
+                                        </div>
                                     </div>
-                                )}
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setShowTestPanel(false)}
+                                        className="text-slate-500 hover:text-slate-700"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+
+                                <Button
+                                    onClick={runTest}
+                                    disabled={isRunning}
+                                    className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium shadow-lg"
+                                >
+                                    {isRunning ? (
+                                        <>
+                                            <Clock className="h-5 w-5 mr-2 animate-spin" />
+                                            Processing Emails...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Play className="h-5 w-5 mr-2" />
+                                            Test with Sample Emails
+                                        </>
+                                    )}
+                                </Button>
                             </div>
-                        </ScrollArea>
-                    </div>
+
+                            <ScrollArea className="flex-1">
+                                <div className="p-6 space-y-6">
+                                    {dummyEmails.map((email, index) => {
+                                        const result = testResults.find(r => r.emailId === email.id);
+                                        const isProcessing = isRunning && !result && index <= testResults.length;
+
+                                        return (
+                                            <Card
+                                                key={email.id}
+                                                className={`transition-all duration-500 ${result ? 'shadow-md border-blue-200' : 'border-slate-200'
+                                                    }`}
+                                            >
+                                                <CardHeader className="pb-3">
+                                                    <div className="flex items-start justify-between mb-2">
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-semibold text-sm text-slate-900 truncate">{email.from}</p>
+                                                            <p className="text-xs text-slate-500">{email.timestamp}</p>
+                                                        </div>
+                                                        <div className={`w-3 h-3 rounded-full ${getPriorityColor(email.priority)}`} />
+                                                    </div>
+
+                                                    <h3 className="font-medium text-sm text-slate-900 leading-snug mb-2">{email.subject}</h3>
+                                                    <p className="text-xs text-slate-600 leading-relaxed">{email.preview}</p>
+                                                </CardHeader>
+
+                                                <CardContent className="pt-0">
+                                                    {isProcessing && (
+                                                        <div className="space-y-3">
+                                                            <div className="flex items-center gap-2 text-sm text-blue-600">
+                                                                <Clock className="h-4 w-4 animate-spin" />
+                                                                Analyzing...
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <div className="h-3 bg-slate-100 animate-pulse rounded" />
+                                                                <div className="h-3 bg-slate-100 animate-pulse rounded w-3/4" />
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {result && (
+                                                        <div className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-2">
+                                                            {/* Triggered Rules */}
+                                                            <div>
+                                                                <p className="text-xs font-medium text-slate-500 mb-2">TRIGGERED RULES</p>
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {result.analysis.triggeredRules.map((rule: string, i: number) => (
+                                                                        <Badge key={i} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                                                            {rule}
+                                                                        </Badge>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Analysis Results */}
+                                                            <div className="space-y-3">
+                                                                <div className="flex justify-between text-xs">
+                                                                    <span className="text-slate-500">Priority:</span>
+                                                                    <Badge variant="outline" className={`${email.priority === 'urgent' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                                        email.priority === 'high' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                                                            email.priority === 'medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                                                                'bg-green-50 text-green-700 border-green-200'
+                                                                        } capitalize`}>
+                                                                        {email.priority}
+                                                                    </Badge>
+                                                                </div>
+
+                                                                <div className="flex justify-between text-xs">
+                                                                    <span className="text-slate-500">Confidence:</span>
+                                                                    <span className="font-medium">{result.analysis.confidence}%</span>
+                                                                </div>
+
+                                                                <div className="flex justify-between text-xs">
+                                                                    <span className="text-slate-500">Response Time:</span>
+                                                                    <span className="font-medium">{result.analysis.estimatedTime}</span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Suggested Response */}
+                                                            <div>
+                                                                <p className="text-xs font-medium text-green-600 mb-2 flex items-center">
+                                                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                                                    SUGGESTED RESPONSE
+                                                                </p>
+                                                                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                                                                    <p className="text-xs text-green-800 leading-relaxed italic">
+                                                                        "{result.analysis.responseTemplate}"
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        );
+                                    })}
+
+                                    {!isRunning && testResults.length === 0 && (
+                                        <div className="text-center py-12">
+                                            <Bot className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                                            <p className="text-slate-500 text-sm">
+                                                Click "Test with Sample Emails" to see how your agent performs
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </ScrollArea>
+                        </div>
+                    )}
                 </div>
             </SidebarInset>
         </SidebarProvider>

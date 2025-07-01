@@ -387,18 +387,15 @@ export function RuleBuilder({ rules, onRulesChange }: RuleBuilderProps) {
                                                     <Badge variant="outline" className={`text-xs ${categoryInfo?.color} ${categoryInfo?.bgColor}`}>
                                                         {categoryInfo?.name}
                                                     </Badge>
-                                                    <Badge variant="outline" className="text-xs">
-                                                        {template.complexity}
-                                                    </Badge>
                                                 </div>
                                                 <p className="font-medium text-sm text-slate-900 mb-2">{template.name}</p>
                                                 <p className="text-xs text-slate-600 mb-1">
-                                                    <span className="font-medium">When:</span> {template.condition}
+                                                    <span className="font-medium text-blue-600">When:</span> {template.condition}
                                                 </p>
                                                 <p className="text-xs text-slate-600 mb-2">
-                                                    <span className="font-medium">Then:</span> {template.action}
+                                                    <span className="font-medium text-green-600">Then:</span> {template.action}
                                                 </p>
-                                                <p className="text-xs text-slate-500">{template.usage}</p>
+                                                <p className="text-xs text-slate-400">{template.usage}</p>
                                             </button>
                                         );
                                     })}
@@ -410,32 +407,30 @@ export function RuleBuilder({ rules, onRulesChange }: RuleBuilderProps) {
 
                 {/* Right Side - Editor */}
                 <div className="flex-1">
-                    <div className="bg-slate-50 rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-                        {/* Editor Header */}
-                        <div className="bg-slate-100 px-4 py-3 border-b border-slate-200">
+                    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                        {/* Simplified Header */}
+                        <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-xs text-slate-500">
-                                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                    <span className="ml-3 font-mono">
-                                        {activeCategoryData?.name.toLowerCase().replace(/\s+/g, "-")}-rules.txt
-                                    </span>
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-lg ${activeCategoryData?.bgColor}`}>
+                                        {activeCategoryData && <activeCategoryData.iconComponent className={`w-4 h-4 ${activeCategoryData?.color}`} />}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-medium text-slate-900">{activeCategoryData?.name}</h3>
+                                        <p className="text-xs text-slate-500">
+                                            {activeRules.filter(r => r.isActive).length}/{activeRules.length} active rules
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-slate-500">
-                                        {activeRules.filter(r => r.isActive).length}/{activeRules.length} active
-                                    </span>
-                                    <Button variant="ghost" size="sm" onClick={() => setIsAddingRule(true)} className="h-7 px-3 text-xs">
-                                        <Plus className="w-3 h-3 mr-1" />
-                                        Add Rule
-                                    </Button>
-                                </div>
+                                <Button variant="ghost" size="sm" onClick={() => setIsAddingRule(true)}>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Add Rule
+                                </Button>
                             </div>
                         </div>
 
                         {/* Editor Content */}
-                        <div className="font-mono text-sm min-h-[500px] bg-white">
+                        <div className="min-h-[500px]">
                             {activeRules.map((rule, index) => (
                                 <EditableRuleLine
                                     key={rule.id}
@@ -452,19 +447,11 @@ export function RuleBuilder({ rules, onRulesChange }: RuleBuilderProps) {
 
                             {/* Add new rule line */}
                             {isAddingRule && (
-                                <div className="flex items-start gap-4 px-4 py-4 bg-yellow-50 border-b border-slate-100">
-                                    <div className="text-slate-400 text-xs mt-1 w-8 text-right select-none font-mono">
-                                        {activeRules.length + 1}
-                                    </div>
+                                <div className="flex items-start gap-4 px-4 py-4 bg-blue-50 border-b border-slate-100">
                                     <div className="mt-1">
                                         <Checkbox checked={true} className="w-4 h-4" />
                                     </div>
                                     <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${activeCategoryData?.color} ${activeCategoryData?.bgColor}`}>
-                                                {activeCategoryData?.icon} {activeCategoryData?.name}
-                                            </span>
-                                        </div>
                                         <textarea
                                             ref={textareaRef}
                                             value={newRuleText}
@@ -478,7 +465,7 @@ export function RuleBuilder({ rules, onRulesChange }: RuleBuilderProps) {
                                                 }
                                             }}
                                             placeholder="Describe when this rule should trigger and what action to take..."
-                                            className="w-full bg-transparent border border-blue-300 rounded px-3 py-2 outline-none resize-none text-slate-900 leading-relaxed focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full bg-white border border-blue-300 rounded px-3 py-2 outline-none resize-none text-slate-900 leading-relaxed focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                             rows={3}
                                         />
                                         <div className="flex gap-2 mt-3">
@@ -503,11 +490,10 @@ export function RuleBuilder({ rules, onRulesChange }: RuleBuilderProps) {
                             {/* Empty state */}
                             {activeRules.length === 0 && !isAddingRule && (
                                 <div className="flex items-center gap-4 px-4 py-12 text-slate-400">
-                                    <div className="text-xs w-8 text-right select-none font-mono">1</div>
                                     <div className="w-4 h-4"></div>
                                     <div className="flex-1 text-sm">
-                                        <span className="opacity-60 font-mono">
-                                            // No rules in this category yet. Click "Add Rule" to get started...
+                                        <span className="opacity-60">
+                                            No rules in this category yet. Click "Add Rule" to get started.
                                         </span>
                                     </div>
                                 </div>
@@ -565,29 +551,11 @@ function EditableRuleLine({
 
     return (
         <div className="group flex items-start gap-4 px-4 py-4 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0">
-            <div className="text-slate-400 text-xs mt-1 w-8 text-right select-none font-mono">{lineNumber}</div>
-
             <div className="mt-1">
                 <Checkbox checked={rule.isActive} onCheckedChange={onToggle} className="w-4 h-4" />
             </div>
 
             <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${categoryData.color} ${categoryData.bgColor}`}>
-                        {categoryData.icon} {categoryData.name}
-                    </span>
-                    {rule.usage && (
-                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                            {rule.usage}
-                        </Badge>
-                    )}
-                    {rule.successRate && (
-                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
-                            {rule.successRate}% success
-                        </Badge>
-                    )}
-                </div>
-
                 {rule.isEditing ? (
                     <div className="space-y-3">
                         <div>
@@ -631,17 +599,20 @@ function EditableRuleLine({
                     </div>
                 ) : (
                     <div className={`cursor-text hover:bg-slate-50 rounded px-2 py-2 -mx-2 transition-colors ${!rule.isActive ? "opacity-50" : ""}`} onClick={onStartEdit}>
-                        <div className="font-semibold text-slate-900 mb-2 text-sm">{rule.name}</div>
+                        <div className="font-medium text-slate-900 mb-1">{rule.name}</div>
+                        {rule.usage && (
+                            <div className="text-xs text-slate-400 mb-2">{rule.usage}</div>
+                        )}
                         <div className="space-y-1 text-sm">
                             <div className="text-slate-700">
-                                <span className="text-blue-600 font-medium">When:</span> {rule.condition}
+                                <span className="font-medium text-blue-600">When:</span> {rule.condition}
                             </div>
                             <div className="text-slate-700">
-                                <span className="text-green-600 font-medium">Then:</span> {rule.action}
+                                <span className="font-medium text-green-600">Then:</span> {rule.action}
                             </div>
                         </div>
                         {!rule.isActive && (
-                            <div className="text-xs text-slate-500 mt-2 italic">Rule is disabled</div>
+                            <div className="text-xs text-slate-400 mt-2 italic">Rule is disabled</div>
                         )}
                     </div>
                 )}
