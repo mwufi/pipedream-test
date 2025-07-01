@@ -76,6 +76,7 @@ div[data-color-mode="dark"] {
   --text-lg: 1rem;
   --text-2xl: 1.5rem;
   --text-xl: 1.25rem;
+  --spacing: 4px;
   --spacing-none: 0rem;
   /* --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
