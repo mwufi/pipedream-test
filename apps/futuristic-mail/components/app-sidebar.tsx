@@ -114,13 +114,13 @@ const data = {
   apps: [
     {
       name: "Reply Agent",
-      url: "/apps/reply-agent",
+      url: "/v2/reply-agent",
       icon: Bot,
       unreadCount: 1,
     },
     {
       name: "Summarizer",
-      url: "/apps/summarizer",
+      url: "/v2/summarizer",
       icon: AudioWaveform,
       unreadCount: 0,
     },

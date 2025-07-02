@@ -64,6 +64,23 @@ div[data-color-mode="dark"] {
   color: var(--email-text-highlighted);
 }
 
+/* Start Generation Here */
+/* Hide scrollbars for webkit browsers */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbars for Firefox */
+* {
+  scrollbar-width: none;
+}
+
+/* Hide scrollbars for IE/Edge */
+* {
+  -ms-overflow-style: none;
+}
+/* End Generation Here */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
